@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Cuttlestore</title>
+  <style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+  <style type="text/css">body {
+max-width: 64rem;
+margin: 4rem auto;
+background-color: #121212;
+color: #f1f1f1;
+}
+h1, h2, h3, h4, h5 {
+margin-top: 2rem;
+color: #70dbff;
+}
+a, a:hover, a:visited {
+color: #70dbff;
+}
+pre {
+background-color: #00171f;
+padding: 1rem;
+border-radius: 1rem;
+}
+</style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"><a href="https://github.com/SeriousBug/Cuttlestore">Cuttlestore</a></h1>
+</header>
+<p>Cuttlestore is a generic API for key-value stores. It allows you to
+support multiple key-value stores with zero additional effort, and makes
+it possible to switch between different stores at runtime.</p>
+<h1 id="example">Example</h1>
+<div class="sourceCode" id="cb1"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">use</span> <span class="pp">cuttlestore::</span><span class="op">{</span>Cuttlestore<span class="op">,</span> PutOptions<span class="op">};</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">use</span> <span class="pp">serde::</span><span class="op">{</span>Deserialize<span class="op">,</span> Serialize<span class="op">};</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">use</span> <span class="pp">std::time::</span>Duration<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">#[</span>derive<span class="at">(</span><span class="bu">Debug</span><span class="op">,</span> Serialize<span class="op">,</span> Deserialize<span class="at">)]</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> SelfDestructingMessage <span class="op">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    message<span class="op">:</span> <span class="dt">String</span><span class="op">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">#[</span><span class="pp">tokio::</span>main<span class="at">]</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">fn</span> main() <span class="op">{</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> store <span class="op">=</span> <span class="pp">Cuttlestore::</span>new(<span class="st">&quot;filesystem://./example-store&quot;</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>                                <span class="co">// or redis, sqlite, in-memory</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span><span class="kw">await</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>unwrap()<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> mission <span class="op">=</span> SelfDestructingMessage <span class="op">{</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        message<span class="op">:</span> <span class="st">&quot;Your mission, should you choose to accept it, ...&quot;</span><span class="op">.</span>to_string()<span class="op">,</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="op">};</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    store</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>put_with(<span class="st">&quot;impossible&quot;</span><span class="op">,</span> <span class="op">&amp;</span>mission<span class="op">,</span> <span class="pp">PutOptions::</span>ttl_secs(<span class="dv">60</span>))</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span><span class="kw">await</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="op">.</span>unwrap()<span class="op">;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Later</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> value<span class="op">:</span> <span class="dt">Option</span><span class="op">&lt;</span>SelfDestructingMessage<span class="op">&gt;</span> <span class="op">=</span> store<span class="op">.</span>get(<span class="st">&quot;impossible&quot;</span>)<span class="op">.</span><span class="kw">await</span><span class="op">.</span>unwrap()<span class="op">;</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="pp">println!</span>(<span class="st">&quot;Message says: {value:?}&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h1 id="supported-backends">Supported Backends</h1>
+<p>Cuttlestore currently has support for:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Feature</th>
+<th>Connection string</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Redis</td>
+<td>backend-redis</td>
+<td>redis://127.0.0.1</td>
+<td>Backed by Redis. This will get you the best performance and
+scalability, but you have to set up Redis.</td>
+</tr>
+<tr class="even">
+<td>Sqlite</td>
+<td>backend-sqlite</td>
+<td>sqlite://path</td>
+<td>An sqlite database used as a key-value store. Good performance, but
+large stores may hit bottlenecks.</td>
+</tr>
+<tr class="odd">
+<td>Filesystem</td>
+<td>backend-filesystem</td>
+<td>filesystem://path</td>
+<td>Uses files in a folder as a key-value store. Performance depends on
+your filesystem.</td>
+</tr>
+<tr class="even">
+<td>In-Memory</td>
+<td>backend-in-memory</td>
+<td>in-memory</td>
+<td>Not persistent, but high performance. Useful if the store is
+ephemeral, like a cache.</td>
+</tr>
+</tbody>
+</table>
+<h1 id="overview">Overview</h1>
+<ul>
+<li><strong>Pros:</strong> Cuttlestore is useful if
+<ul>
+<li>You want to allow end-users to pick which store to use without
+recompiling</li>
+<li>You are looking for a simple API for a basic key-value store</li>
+</ul></li>
+<li><strong>Cons:</strong> Avoid Cuttlestore if:
+<ul>
+<li>You need access to key-value store specific features</li>
+<li>You only want to one key-value store, and don&#39;t care about
+switching</li>
+</ul></li>
+</ul>
+<p>For example, if you are making a self-hostable web application, and
+you want to allow users to pick between using Redis and sqlite depending
+on their needs, you could use Cuttlestore. Cuttlestore supports both of
+these backends, and your users could input the connection string in your
+application settings to pick one of these backends. Users with large
+deployments could pick Redis, and small-scale users could pick sqlite so
+they don&#39;t have to deal with also deploying Redis.</p>
+<h1 id="logging">Logging</h1>
+<p>The library can log errors with both <a href="https://docs.rs/tracing/latest/tracing/">tracing</a> and <a href="https://docs.rs/log/latest/log/">log</a>. <code>tracing</code> is
+enabled by default, but you can switch to <code>log</code> by enabling
+the feature:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode toml"><code class="sourceCode toml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">cuttlestore</span> <span class="op">=</span> <span class="op">{ </span><span class="dt">version</span><span class="op"> =</span> <span class="st">&quot;0.1&quot;</span><span class="op">, </span><span class="dt">default-features</span><span class="op"> =</span> <span class="cn">false</span><span class="op">, </span><span class="dt">features</span><span class="op"> =</span> <span class="op">[</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;logging-log&quot;</span><span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># remember to enable the backends!</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;backend-redis&quot;</span><span class="op">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;backend-sqlite&quot;</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;backend-filesystem&quot;</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;backend-in-memory&quot;</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="op">]</span> <span class="op">}</span></span></code></pre></div>
+<h1 id="details-of-backends">Details of backends</h1>
+<h2 id="redis">Redis</h2>
+<p>Redis is generally the best option if you don&#39;t mind setting it up.
+It offers good performance and scalability as you can connect many app
+servers into the same Redis instance.</p>
+<p>Cuttlestore has support for TLS, which you can activate by adding an
+<code>s</code> to the connection string like
+<code>rediss://127.0.0.1</code>. You can also change the port you are
+using by adding <code>:port</code> to the end, for example
+<code>redis://127.0.0.1:5678</code>.</p>
+<p>Cuttlestore has support for ACLs as well. You can enable them by
+adding them to the connection string. For example, if your username is
+<code>agent</code> and password is <code>47</code>, you can use the
+connection string
+<code>redis://127.0.0.1?username=agent&amp;password=47</code>.</p>
+<h2 id="sqlite">Sqlite</h2>
+<p>Cuttlestore can use an sqlite database as a key-value store when
+using this backend. The database and any tables are automatically
+created.</p>
+<p>The sqlite database is configured to use write ahead logging, which
+means it may create some additional files next to the database file you
+configure in the connection string. The configuration is also set in a
+way that there is a small chance of losing the last few <code>put</code>
+or <code>delete</code> operations if a crash occurs, which is
+unfortunately required to bring the performance to a reasonable
+level.</p>
+<p>Sqlite doesn&#39;t have built-in ttl support, so ttl is supported by
+periodically scanning the database and deleting expired entries on a
+best-effort basis. This scan uses a Tokio task, meaning it will run
+within your existing Tokio thread pool.</p>
+<h2 id="filesystem">Filesystem</h2>
+<p>Cuttlestore can be configured to use a folder as a key value store.
+When using this backend, the file names in the folder are the keys, and
+the values are stored using a binary encoding within the files.</p>
+<p>The performance largely depends on your filesystem. Durability is
+similar to sqlite: there is a small risk of losing the latest few
+operations, but data corruption is not expected.</p>
+<p>The ttl feature is supported by periodically scanning the database
+and deleting expired entries on a best-effort basis. This scan uses a
+Tokio task, meaning it will run within your existing Tokio thread
+pool.</p>
+<h3 id="in-memory">In-Memory</h3>
+<p>The in-memory backend is a multithreaded in-memory key-value store
+backed by <a href="https://docs.rs/dashmap/latest/dashmap/index.html">dashmap</a>.</p>
+<p>The performance is the best, but everything is kept in-memory so
+there is no durability.</p>
+<h1 id="ttl">TTL</h1>
+<p>The TTL (time to live) feature allows you to designate values that
+should only exist in the store for a limited amount of time. The values
+that run out of TTL will be expired and deleted from the store to save
+space.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode rust"><code class="sourceCode rust"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>store<span class="op">.</span>put_with(<span class="st">&quot;impossible&quot;</span><span class="op">,</span> <span class="op">&amp;</span>mission<span class="op">,</span> <span class="pp">PutOptions::</span>ttl_secs(<span class="dv">60</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">// or</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>store<span class="op">.</span>put_with(<span class="st">&quot;impossible&quot;</span><span class="op">,</span> <span class="op">&amp;</span>mission<span class="op">,</span> <span class="pp">PutOptions::</span>ttl(<span class="pp">Duration::</span>from_secs(<span class="dv">60</span>)))</span></code></pre></div>
+<p>Some backends have built-in support for TTLs (redis). For other
+backends, the TTL support is emulated by periodically running a Tokio
+task which scans the store and cleans up expired values. This task runs
+within your existing Tokio thread pool.</p>
+<p>Get and scan operations are guaranteed to never return expired
+values, but expired values are not necessarily deleted immediately.</p>
+<h1 id="benchmarks">Benchmarks</h1>
+<p>There are some benchmarks to compare the performance of the different
+backends. All the existing benchmarks use small keyspaces so the
+performance is not necessarily realistic. <a href="reports/">Click here
+to view the benchmarks</a>.</p>
+</body>
+</html>

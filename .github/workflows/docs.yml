@@ -1,0 +1,37 @@
+on:
+  push:
+    paths:
+      - Readme.md
+      - docs/style.css
+      - docs/reports/*
+    branches:
+      - main
+  workflow_dispatch:
+name: docs
+jobs:
+  render-docs:
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Render docs
+        uses: docker://pandoc/core:2.19
+        with:
+          args: --from gfm --to html5 --output docs/index.html --css docs/style.css --shift-heading-level-by=-1 --embed-resources --standalone Readme.md
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: "docs"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

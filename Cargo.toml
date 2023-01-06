@@ -1,0 +1,89 @@
+[package]
+name = "cuttlestore"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = [
+  "backend-redis",
+  "backend-filesystem",
+  "backend-in-memory",
+  "backend-sqlite",
+  "logging-tracing",
+]
+backend-redis = ["redis", "bb8", "bb8-redis"]
+backend-filesystem = []
+backend-in-memory = ["dashmap"]
+backend-sqlite = ["sqlx"]
+logging-tracing = ["tracing"]
+logging-log = ["log"]
+
+[dependencies]
+# For async functions in trait definitions
+async-trait = "0.1.60"
+# For streams (async iterators)
+futures = "0.3.25"
+# Async runtime
+tokio = { version = "1.23.1", features = ["full"] }
+# Built-in for converting Tokio builtins to streams
+tokio-stream = { version = "0.1.11", features = ["fs"] }
+# Helper macros to generate streams
+async-stream = "0.3.3"
+# Serializing data. The API requires stored types to support Serde, but it's also used internally.
+serde = { version = "1.0.152", features = ["derive"] }
+# Binary serialization. Both used by the API to encode the payloads, and by some
+# backends internally.
+bincode = "1.3.3"
+# Generating error types.
+thiserror = "1.0.38"
+# Used to parse connection strings.
+lazy-regex = "2.4.1"
+# Logging errors
+log = { version = "0.4", optional = true }
+tracing = { version = "0.1", optional = true }
+
+#
+# == Backend specific
+#
+
+# Concurrent in-memory key-value storage, for in-memory
+dashmap = { version = "5.4", optional = true }
+
+# Redis
+redis = { version = "0.22", optional = true, features = [
+  "tokio-comp",
+  "tokio-native-tls-comp",
+] }
+# Connection pool for redis
+bb8 = { version = "0.8", optional = true }
+bb8-redis = { version = "0.12", optional = true }
+
+# Sqlite
+sqlx = { version = "0.6", default-features = false, features = [
+  "sqlite",
+  "runtime-tokio-native-tls",
+], optional = true }
+
+[dev-dependencies]
+# For benchmarks
+criterion = { version = "0.4", features = ["async_tokio"] }
+# Generates random data to put into the store during benchmarks
+nanoid = "0.4"
+lipsum = "0.8"
+rand = "0.8"
+
+[[bench]]
+name = "put-sequential"
+harness = false
+
+[[bench]]
+name = "put-concurrent"
+harness = false
+
+[[bench]]
+name = "get-concurrent"
+harness = false
+
+[[bench]]
+name = "get-sequential"
+harness = false

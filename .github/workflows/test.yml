@@ -1,0 +1,39 @@
+name: tests
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - src/*
+      - examples/*
+      - benches/*
+  pull_request:
+    branches:
+      - "*"
+    paths:
+      - src/*
+      - examples/*
+      - benches/*
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Rust
+        run: rustup toolchain install stable --component llvm-tools-preview
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+      - name: Generate code coverage
+        run: cargo llvm-cov --all-features --benches --examples --tests --workspace --lcov --output-path lcov.info
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379

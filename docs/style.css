@@ -1,0 +1,21 @@
+body {
+  max-width: 64rem;
+  margin: 4rem auto;
+  background-color: #121212;
+  color: #f1f1f1;
+}
+  
+h1, h2, h3, h4, h5 {
+  margin-top: 2rem;
+  color: #70dbff;
+}
+
+a, a:hover, a:visited {
+  color: #70dbff;
+}
+
+pre {
+  background-color: #00171f;
+  padding: 1rem;
+  border-radius: 1rem;
+}
