@@ -39,9 +39,8 @@ impl CuttleBackend for RedisBackend {
             regex_captures!(r#"^redis(s)?://([^?]+)[?]?(.*)"#, conn)
         {
             let arg_pairs: HashMap<&str, &str> = args
-                .split("&")
-                .map(|pair| pair.split_once("="))
-                .filter_map(|v| v)
+                .split('&')
+                .flat_map(|pair| pair.split_once('='))
                 .collect();
 
             let address = format!("redis{secure}://{address}");
@@ -172,7 +171,7 @@ impl Drop for RedisScanStream {
     }
 }
 
-impl<'a> Stream for RedisScanStream {
+impl Stream for RedisScanStream {
     type Item = Result<(String, Vec<u8>), CuttlestoreError>;
 
     fn poll_next(

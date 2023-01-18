@@ -20,13 +20,13 @@ impl PutOptions {
     }
 
     pub fn ttl_secs(seconds: u64) -> Self {
-        PutOptions {
-            ttl: Some(seconds),
-            ..Default::default()
-        }
+        PutOptions { ttl: Some(seconds) }
     }
 }
 
+#[allow(clippy::derivable_impls)]
+// While the Default derivation for `Option` is `None`, we want to explicitly
+// state that here.
 impl Default for PutOptions {
     fn default() -> Self {
         Self { ttl: None }
