@@ -1,4 +1,4 @@
-use cuttlestore::{Cuttlestore, PutOptions};
+use cuttlestore::{Cuttlestore, CuttlestoreBuilder, PutOptions};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -9,9 +9,13 @@ struct SelfDestructingMessage {
 
 #[tokio::main]
 async fn main() {
-    let store = Cuttlestore::new("filesystem://./example-store/ttl")
-        .await
-        .unwrap();
+    let store: Cuttlestore<SelfDestructingMessage> =
+        CuttlestoreBuilder::new("filesystem://./example-store/using-builder")
+            // Every 3 seconds, the store will be sweeped for stale values.
+            .clean_every_secs(3)
+            .finish()
+            .await
+            .unwrap();
 
     let value: Option<SelfDestructingMessage> = store.get("impossible").await.unwrap();
     println!("At first: {value:?}");
@@ -26,7 +30,7 @@ async fn main() {
     let value: Option<SelfDestructingMessage> = store.get("impossible").await.unwrap();
     println!("After writing: {value:?}");
 
-    tokio::time::sleep(Duration::from_secs(3)).await;
+    tokio::time::sleep(Duration::from_secs(4)).await;
 
     let value: Option<SelfDestructingMessage> = store.get("impossible").await.unwrap();
     println!("After waiting: {value:?}");

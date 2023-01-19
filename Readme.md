@@ -154,7 +154,8 @@ store.put_with("impossible", &mission, PutOptions::ttl(Duration::from_secs(60)))
 Some backends have built-in support for TTLs (redis). For other backends, the
 TTL support is emulated by periodically running a Tokio task which scans the
 store and cleans up expired values. This task runs within your existing Tokio
-thread pool.
+thread pool. You can configure how often this cleanup task runs using
+`CuttlestoreBuilder`, see the [builder example](https://github.com/SeriousBug/cuttlestore/blob/main/examples/using-builder.rs#L13-L18).
 
 Get and scan operations are guaranteed to never return expired values, but
 expired values are not necessarily deleted immediately.

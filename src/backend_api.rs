@@ -6,7 +6,7 @@ use futures::stream::BoxStream;
 use crate::common::CuttlestoreError;
 
 /// Options to use when putting a value.
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct PutOptions {
     /// The number of seconds from the time of the store for which the data should be available.
     ///

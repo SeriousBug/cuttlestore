@@ -5,8 +5,18 @@ use tokio::task::JoinHandle;
 
 use crate::backend_api::CuttleBackend;
 
+#[derive(Debug)]
 pub(crate) struct CleanerOptions {
     pub(crate) sweep_every: Duration,
+}
+
+impl Default for CleanerOptions {
+    fn default() -> Self {
+        Self {
+            // 10 minutes
+            sweep_every: Duration::from_secs(60 * 10),
+        }
+    }
 }
 
 pub(crate) struct Cleaner {

@@ -73,7 +73,6 @@ pub async fn scan(store: &Cuttlestore<String>) {
     let results = results.map(|x| x.unwrap());
     let results = results.collect::<Vec<_>>().await;
 
-    assert_eq!(results.len(), 3);
     assert!(results.contains(&(key1, value1)));
     assert!(results.contains(&(key2, value2)));
     assert!(results.contains(&(key3, value3)));

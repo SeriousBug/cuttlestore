@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{marker::PhantomData, sync::Arc};
 
 use async_stream::try_stream;
 use futures::stream::BoxStream;
@@ -70,14 +70,16 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     /// Stores are only available if the corresponding feature is enabled. They
     /// all are by default, but mind that if you disable the default features.
     pub async fn new<C: AsRef<str>>(conn: C) -> Result<Self, CuttlestoreError> {
-        let store = Arc::new(find_matching_backend(conn.as_ref()).await?);
+        Self::make(conn.as_ref(), CleanerOptions::default()).await
+    }
+
+    pub(crate) async fn make(
+        conn: &str,
+        cleaner_options: CleanerOptions,
+    ) -> Result<Self, CuttlestoreError> {
+        let store = Arc::new(find_matching_backend(conn).await?);
         let cleaner: Option<Arc<Cleaner>> = if store.requires_cleaner() {
-            Some(Arc::new(Cleaner::new(
-                store.clone(),
-                CleanerOptions {
-                    sweep_every: Duration::from_secs(60),
-                },
-            )))
+            Some(Arc::new(Cleaner::new(store.clone(), cleaner_options)))
         } else {
             None
         };
