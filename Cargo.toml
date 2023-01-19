@@ -1,5 +1,6 @@
 [package]
 name = "cuttlestore"
+description = "A generic API for interacting with key-value stores that can be selected at runtime."
 version = "0.1.0"
 edition = "2021"
 authors = ["Kaan Barmore-Genç <kaan@bgenc.net>"]
