@@ -2,6 +2,10 @@
 name = "cuttlestore"
 version = "0.1.0"
 edition = "2021"
+authors = ["Kaan Barmore-Genç <kaan@bgenc.net>"]
+license = "MIT"
+readme = "Readme.md"
+repository = "https://github.com/SeriousBug/cuttlestore"
 
 [features]
 default = [
