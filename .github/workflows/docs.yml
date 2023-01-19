@@ -4,6 +4,7 @@ on:
       - Readme.md
       - docs/style.css
       - docs/reports/*
+      - .github/workflows/docs.yml
     branches:
       - main
   workflow_dispatch:

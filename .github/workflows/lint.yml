@@ -5,6 +5,7 @@ on:
       - examples/*
       - benches/*
       - tests/*
+      - .github/workflows/lint.yml
 name: lint checks
 jobs:
   lint:
