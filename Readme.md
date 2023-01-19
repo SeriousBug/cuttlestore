@@ -1,5 +1,11 @@
 # [Cuttlestore](https://github.com/SeriousBug/Cuttlestore)
 
+[![tests](https://img.shields.io/github/actions/workflow/status/SeriousBug/cuttlestore/test.yml?label=tests&branch=main)](https://github.com/SeriousBug/cuttlestore/actions/workflows/test.yml)
+[![Test coverage report](https://img.shields.io/codecov/c/github/SeriousBug/cuttlestore)](https://codecov.io/gh/SeriousBug/cuttlestore)
+[![lint checks](https://img.shields.io/github/actions/workflow/status/SeriousBug/cuttlestore/lint.yml?label=lints&branch=main)](https://github.com/SeriousBug/cuttlestore/actions/workflows/lint.yml)
+[![Releases](https://img.shields.io/github/v/release/SeriousBug/cuttlestore?include_prereleases)](https://github.com/SeriousBug/cuttlestore/releases)
+[![MIT license](https://img.shields.io/github/license/SeriousBug/cuttlestore)](https://github.com/SeriousBug/cuttlestore/blob/main/LICENSE.txt)
+
 Cuttlestore is a generic API for key-value stores. It allows you to support
 multiple key-value stores with zero additional effort, and makes it possible to
 switch between different stores at runtime.
