@@ -64,7 +64,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     std::fs::remove_dir_all("./example-store/filesystem").ok();
 
     std::fs::remove_file("./example-store/sqlite").ok();
-    std::fs::remove_file("./example-store/sqlite-journal").ok();
+    std::fs::remove_file("./example-store/sqlite-shm").ok();
+    std::fs::remove_file("./example-store/sqlite-wal").ok();
     let sqlite = runtime.block_on(async {
         let store: Cuttlestore<String> = Cuttlestore::new("sqlite://example-store/sqlite")
             .await
@@ -77,7 +78,8 @@ fn criterion_benchmark(c: &mut Criterion) {
     });
     drop(sqlite);
     std::fs::remove_file("./example-store/sqlite").ok();
-    std::fs::remove_file("./example-store/sqlite-journal").ok();
+    std::fs::remove_file("./example-store/sqlite-shm").ok();
+    std::fs::remove_file("./example-store/sqlite-wal").ok();
 
     group.finish();
 }

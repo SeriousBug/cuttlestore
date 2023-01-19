@@ -164,3 +164,27 @@ async fn find_matching_backend(
             .to_string(),
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::common::CuttlestoreError;
+
+    use super::find_matching_backend;
+    use tokio::test;
+
+    #[test]
+    async fn error_on_no_backend() {
+        let result = find_matching_backend("does-not-exist://really").await;
+        let error_msg = match result {
+            Err(CuttlestoreError::NoMatchingBackend(msg)) => msg,
+            Err(err) => panic!("Unexpected error {err:?}"),
+            Ok(_) => panic!("Expected no backends, but found one"),
+        };
+        // The error message should not specify the part after ://, in case
+        // there are passwords or other secret information there.
+        assert!(
+            !error_msg.contains("really"),
+            "error message contains backend details"
+        )
+    }
+}

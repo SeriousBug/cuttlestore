@@ -6,6 +6,7 @@ use futures::stream::BoxStream;
 use crate::common::CuttlestoreError;
 
 /// Options to use when putting a value.
+#[derive(Debug, PartialEq, PartialOrd)]
 pub struct PutOptions {
     /// The number of seconds from the time of the store for which the data should be available.
     ///
@@ -80,4 +81,19 @@ pub trait CuttleBackend {
     async fn scan(
         &self,
     ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use crate::PutOptions;
+
+    #[test]
+    fn seconds_are_seconds() {
+        assert_eq!(
+            PutOptions::ttl_secs(32),
+            PutOptions::ttl(Duration::from_secs(32))
+        )
+    }
 }
