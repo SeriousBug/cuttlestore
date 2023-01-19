@@ -4,6 +4,7 @@ on:
       - src/*
       - examples/*
       - benches/*
+      - tests/*
 name: lint checks
 jobs:
   lint:
