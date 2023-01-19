@@ -55,6 +55,14 @@ Cuttlestore currently has support for:
 | Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            |
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      |
 
+## Installing
+
+Add Cuttlestore to your `Cargo.toml`:
+
+```toml
+cuttlestore = "0.1"
+```
+
 ## Overview
 
 - **Pros:** Cuttlestore is useful if
