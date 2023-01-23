@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use async_trait::async_trait;
 use dashmap::DashMap;
 use futures::stream::BoxStream;
@@ -59,13 +61,13 @@ impl CuttleBackend for InMemoryBackend {
         "in-memory"
     }
 
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError> {
-        Ok(self.get(key).await)
+    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+        Ok(self.get(key.as_ref()).await)
     }
 
-    async fn put(
+    async fn put<'a>(
         &self,
-        key: &str,
+        key: Cow<'a, str>,
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
@@ -79,8 +81,8 @@ impl CuttleBackend for InMemoryBackend {
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), CuttlestoreError> {
-        self.delete(key).await;
+    async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError> {
+        self.delete(key.as_ref()).await;
         Ok(())
     }
 

@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{borrow::Cow, time::Duration};
 
 use async_trait::async_trait;
 use futures::stream::BoxStream;
@@ -60,16 +60,16 @@ pub trait CuttleBackend {
     ///
     /// The backend MUST NOT return the value if the ttl was provided at the
     /// time of the store, and the ttl has expired.
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError>;
+    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError>;
     /// Put a value into the store.
-    async fn put(
+    async fn put<'a>(
         &self,
-        key: &str,
+        key: Cow<'a, str>,
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError>;
     /// Delete a value from the store.
-    async fn delete(&self, key: &str) -> Result<(), CuttlestoreError>;
+    async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError>;
     /// Walk through all the key-value pairs in the store.
     ///
     /// The backend MUST NOT return the pair if the ttl was provided at the time

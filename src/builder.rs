@@ -1,9 +1,14 @@
-use std::time::Duration;
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 
+use lazy_regex::regex_captures;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
-    common::{cleanup::CleanerOptions, CuttlestoreError},
+    backend_api::CuttleBackend,
+    common::{
+        cleanup::{Cleaner, CleanerOptions},
+        CuttlestoreError,
+    },
     Cuttlestore,
 };
 
@@ -12,6 +17,7 @@ use crate::{
 pub struct CuttlestoreBuilder {
     conn: String,
     cleaner: CleanerOptions,
+    prefix: Option<String>,
 }
 
 impl CuttlestoreBuilder {
@@ -20,6 +26,7 @@ impl CuttlestoreBuilder {
         Self {
             conn: conn.as_ref().to_string(),
             cleaner: CleanerOptions::default(),
+            prefix: None,
         }
     }
 
@@ -48,10 +55,142 @@ impl CuttlestoreBuilder {
         self.clean_every(Duration::from_secs(secs))
     }
 
+    /// Prefix every key in the store with this string.
+    ///
+    /// The prefix will be applied for both get and put operations. The prefix
+    /// is stripped when scanning the store.
+    ///
+    /// If you need multiple applications to share the same backing store,
+    /// adding a unique prefix can help you avoid conflicts.
+    pub fn prefix<C: AsRef<str>>(mut self, prefix: C) -> Self {
+        self.prefix = Some(prefix.as_ref().to_owned());
+        self
+    }
+
     /// Finish configuring your Cuttlestore, finalizing it so you can use it.
     pub async fn finish<Value: Serialize + DeserializeOwned + Send + Sync>(
         self,
     ) -> Result<Cuttlestore<Value>, CuttlestoreError> {
         Cuttlestore::make(&self.conn, self.cleaner).await
+    }
+
+    /// Finish configuring your Cuttlestore, opening it as a CuttleConnection so
+    /// you can make multiple Cuttlestores.
+    ///
+    /// If you need to store multiple types of objects within the same backend,
+    /// you should use this function to create a connection. You can then use
+    /// the connection to create multiple Cuttlestores.
+    pub async fn finish_connection(self) -> Result<CuttleConnection, CuttlestoreError> {
+        CuttleConnection::new(self).await
+    }
+}
+
+/// A connection to the underlying data store which you can use to
+pub struct CuttleConnection {
+    /// The actual store backend.
+    store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
+    #[allow(dead_code)]
+    /// For backends that require it, a cleaner is created which will scan the
+    /// store periodically to drop expired entries.
+    ///
+    /// While the cleaner property is not used directly, we need to keep the
+    /// cleaner around because it will stop when dropped.
+    cleaner: Option<Arc<Cleaner>>,
+    /// Prefix for all stores made out of this connection.
+    prefix: Option<String>,
+}
+
+impl CuttleConnection {
+    pub(crate) async fn new(builder: CuttlestoreBuilder) -> Result<Self, CuttlestoreError> {
+        let store = Arc::new(find_matching_backend(&builder.conn).await?);
+        let cleaner: Option<Arc<Cleaner>> = if store.requires_cleaner() {
+            Some(Arc::new(Cleaner::new(store.clone(), builder.cleaner)))
+        } else {
+            None
+        };
+        Ok(Self {
+            store,
+            cleaner,
+            prefix: builder.prefix,
+        })
+    }
+}
+
+impl std::fmt::Debug for CuttleConnection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CuttlestoreConnection")
+            .field("backend", &self.store.name())
+            .finish()
+    }
+}
+
+impl CuttleConnection {
+    pub async fn make<Value: Serialize + DeserializeOwned + Send + Sync, C: AsRef<str>>(
+        &self,
+        prefix: C,
+    ) -> Result<Cuttlestore<Value>, CuttlestoreError> {
+        Ok(Cuttlestore {
+            store: self.store.clone(),
+            cleaner: self.cleaner.clone(),
+            phantom: PhantomData,
+            prefix: Some(format!(
+                "{}:{}",
+                self.prefix.clone().unwrap_or_else(|| "".to_string()),
+                prefix.as_ref()
+            )),
+        })
+    }
+}
+
+pub(crate) async fn find_matching_backend(
+    conn: &str,
+) -> Result<Box<dyn CuttleBackend + Send + Sync>, CuttlestoreError> {
+    #[cfg(feature = "backend-filesystem")]
+    if let Some(backend) = crate::backends::filesystem::FilesystemBackend::new(conn).await {
+        return Ok(backend?);
+    }
+    #[cfg(feature = "backend-in-memory")]
+    if let Some(backend) = crate::backends::in_memory::InMemoryBackend::new(conn).await {
+        return Ok(backend?);
+    }
+    #[cfg(feature = "backend-redis")]
+    if let Some(backend) = crate::backends::redis::RedisBackend::new(conn).await {
+        return Ok(backend?);
+    }
+    #[cfg(feature = "backend-sqlite")]
+    if let Some(backend) = crate::backends::sqlite::SqliteBackend::new(conn).await {
+        return Ok(backend?);
+    }
+
+    let maybe_backend = regex_captures!(r#"^([^:]+):"#, conn);
+    Err(CuttlestoreError::NoMatchingBackend(
+        maybe_backend
+            .map(|(_, name)| name)
+            .unwrap_or_else(|| conn)
+            .to_string(),
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::common::CuttlestoreError;
+
+    use super::find_matching_backend;
+    use tokio::test;
+
+    #[test]
+    async fn error_on_no_backend() {
+        let result = find_matching_backend("does-not-exist://really").await;
+        let error_msg = match result {
+            Err(CuttlestoreError::NoMatchingBackend(msg)) => msg,
+            Err(err) => panic!("Unexpected error {err:?}"),
+            Ok(_) => panic!("Expected no backends, but found one"),
+        };
+        // The error message should not specify the part after ://, in case
+        // there are passwords or other secret information there.
+        assert!(
+            !error_msg.contains("really"),
+            "error message contains backend details"
+        )
     }
 }

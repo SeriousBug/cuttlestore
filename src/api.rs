@@ -1,12 +1,12 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{borrow::Cow, marker::PhantomData, sync::Arc};
 
 use async_stream::try_stream;
 use futures::stream::BoxStream;
-use lazy_regex::regex_captures;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     backend_api::{CuttleBackend, PutOptions},
+    builder::find_matching_backend,
     common::{
         cleanup::{Cleaner, CleanerOptions},
         CuttlestoreError,
@@ -29,20 +29,24 @@ use crate::{
 /// that does not require scans or disable the scans if this is a problem.
 pub struct Cuttlestore<Value: Serialize + DeserializeOwned + Send + Sync> {
     /// The actual store backend.
-    store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
+    pub(crate) store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
     #[allow(dead_code)]
     /// For backends that require it, a cleaner is created which will scan the
     /// store periodically to drop expired entries.
     ///
     /// While the cleaner property is not used directly, we need to keep the
     /// cleaner around because it will stop when dropped.
-    cleaner: Option<Arc<Cleaner>>,
+    pub(crate) cleaner: Option<Arc<Cleaner>>,
 
     /// A placeholder to hide that Value is not used within the struct. While
     /// unused, Value is part of the Cuttlestore type to ensure users don't
     /// accidentally put and get different types from the same store, which
     /// would fail.
-    phantom: std::marker::PhantomData<Value>,
+    pub(crate) phantom: std::marker::PhantomData<Value>,
+
+    /// If exists, the keys for all operations on this store will be prefix with
+    /// this value .
+    pub(crate) prefix: Option<String>,
 }
 
 impl<Value: Serialize + DeserializeOwned + Send + Sync> std::fmt::Debug for Cuttlestore<Value> {
@@ -86,8 +90,33 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(Cuttlestore {
             store,
             cleaner,
+            prefix: None,
             phantom: PhantomData,
         })
+    }
+
+    /// Prefixes the key, if one is configured for this store.
+    fn key<'a>(&self, key: &'a str) -> Cow<'a, str> {
+        match &self.prefix {
+            Some(prefix) => Cow::Owned(format!("{prefix}:{key}")),
+            None => Cow::Borrowed(key),
+        }
+    }
+
+    /// Strip a prefix from the key, if one is configured for this store.
+    fn strip_prefix<'a>(&self, prefixed_key: String) -> Option<String> {
+        match &self.prefix {
+            Some(prefix) => match prefixed_key
+                // strip the prefix
+                .strip_prefix(prefix)
+                // then strip the : that connects the prefix
+                .map(|key| key.strip_prefix(":"))
+            {
+                Some(Some(key)) => Some(key.to_string()),
+                _ => None,
+            },
+            None => Some(prefixed_key),
+        }
     }
 
     pub async fn put<Key: AsRef<str>>(
@@ -105,15 +134,17 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
         let payload = bincode::serialize(value)?;
-        self.store.put(key.as_ref(), &payload[..], options).await
+        self.store
+            .put(self.key(key.as_ref()), &payload[..], options)
+            .await
     }
 
     pub async fn delete<Key: AsRef<str>>(&self, key: Key) -> Result<(), CuttlestoreError> {
-        self.store.delete(key.as_ref()).await
+        self.store.delete(self.key(key.as_ref())).await
     }
 
     pub async fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<Value>, CuttlestoreError> {
-        let payload = self.store.get(key.as_ref()).await?;
+        let payload = self.store.get(self.key(key.as_ref())).await?;
         let value = payload
             .map(|payload| {
                 let value: Value = bincode::deserialize(&payload[..])?;
@@ -131,62 +162,12 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(Box::pin(try_stream! {
             for await pair in stream {
                 let (key, payload) = pair?;
-                let value: Value = bincode::deserialize(&payload[..])?;
-                yield (key, value);
+                if let Some(key) = self.strip_prefix(key) {
+                    let value: Value = bincode::deserialize(&payload[..])?;
+
+                    yield (key, value);
+                }
             }
         }))
-    }
-}
-
-async fn find_matching_backend(
-    conn: &str,
-) -> Result<Box<dyn CuttleBackend + Send + Sync>, CuttlestoreError> {
-    #[cfg(feature = "backend-filesystem")]
-    if let Some(backend) = crate::backends::filesystem::FilesystemBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-in-memory")]
-    if let Some(backend) = crate::backends::in_memory::InMemoryBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-redis")]
-    if let Some(backend) = crate::backends::redis::RedisBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-sqlite")]
-    if let Some(backend) = crate::backends::sqlite::SqliteBackend::new(conn).await {
-        return Ok(backend?);
-    }
-
-    let maybe_backend = regex_captures!(r#"^([^:]+):"#, conn);
-    Err(CuttlestoreError::NoMatchingBackend(
-        maybe_backend
-            .map(|(_, name)| name)
-            .unwrap_or_else(|| conn)
-            .to_string(),
-    ))
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::common::CuttlestoreError;
-
-    use super::find_matching_backend;
-    use tokio::test;
-
-    #[test]
-    async fn error_on_no_backend() {
-        let result = find_matching_backend("does-not-exist://really").await;
-        let error_msg = match result {
-            Err(CuttlestoreError::NoMatchingBackend(msg)) => msg,
-            Err(err) => panic!("Unexpected error {err:?}"),
-            Ok(_) => panic!("Expected no backends, but found one"),
-        };
-        // The error message should not specify the part after ://, in case
-        // there are passwords or other secret information there.
-        assert!(
-            !error_msg.contains("really"),
-            "error message contains backend details"
-        )
     }
 }

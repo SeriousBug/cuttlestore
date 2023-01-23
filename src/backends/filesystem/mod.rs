@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use futures::stream::BoxStream;
 use lazy_regex::regex_captures;
 use serde::{Deserialize, Serialize};
-use std::{ffi::OsString, io::ErrorKind, path::PathBuf, str::FromStr};
+use std::{borrow::Cow, ffi::OsString, io::ErrorKind, path::PathBuf, str::FromStr};
 use tokio::io::AsyncWriteExt;
 use tokio_stream::wrappers::ReadDirStream;
 
@@ -90,13 +90,13 @@ impl CuttleBackend for FilesystemBackend {
         "filesystem"
     }
 
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError> {
-        Ok(self.get(key).await?)
+    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+        Ok(self.get(key.as_ref()).await?)
     }
 
-    async fn put(
+    async fn put<'a>(
         &self,
-        key: &str,
+        key: Cow<'a, str>,
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
@@ -105,15 +105,15 @@ impl CuttleBackend for FilesystemBackend {
             live_until: options.ttl.map(|v| v + get_system_time()),
         })?;
 
-        let mut file = tokio::fs::File::create(self.base_folder.join(key)).await?;
+        let mut file = tokio::fs::File::create(self.base_folder.join(key.as_ref())).await?;
         file.write_all(&encoded_value[..]).await?;
-        //file.sync_data().await?;
+        file.sync_data().await?;
 
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), CuttlestoreError> {
-        self.delete(key).await?;
+    async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError> {
+        self.delete(key.as_ref()).await?;
         Ok(())
     }
 

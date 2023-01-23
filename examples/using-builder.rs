@@ -11,7 +11,7 @@ struct SelfDestructingMessage {
 async fn main() {
     let store: Cuttlestore<SelfDestructingMessage> =
         CuttlestoreBuilder::new("filesystem://./example-store/using-builder")
-            // Every 3 seconds, the store will be sweeped for stale values.
+            // Every 3 seconds, the store will be swept for stale values.
             .clean_every_secs(3)
             .finish()
             .await
