@@ -104,13 +104,13 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     }
 
     /// Strip a prefix from the key, if one is configured for this store.
-    fn strip_prefix<'a>(&self, prefixed_key: String) -> Option<String> {
+    fn strip_prefix(&self, prefixed_key: String) -> Option<String> {
         match &self.prefix {
             Some(prefix) => match prefixed_key
                 // strip the prefix
                 .strip_prefix(prefix)
                 // then strip the : that connects the prefix
-                .map(|key| key.strip_prefix(":"))
+                .map(|key| key.strip_prefix(':'))
             {
                 Some(Some(key)) => Some(key.to_string()),
                 _ => None,

@@ -135,7 +135,7 @@ impl CuttleConnection {
             phantom: PhantomData,
             prefix: Some(format!(
                 "{}:{}",
-                self.prefix.clone().unwrap_or_else(|| "".to_string()),
+                self.prefix.clone().unwrap_or_default(),
                 prefix.as_ref()
             )),
         })
