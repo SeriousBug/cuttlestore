@@ -1,11 +1,17 @@
-use std::{borrow::Cow, time::Duration};
+use std::{
+    borrow::Cow,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
 use async_trait::async_trait;
 use futures::stream::BoxStream;
 
-use crate::common::CuttlestoreError;
+use crate::common::{get_system_time, CuttlestoreError};
 
-/// Options to use when putting a value.
+/// Options to use when placing a value into a store.
+///
+/// The only option is a TTL value for now, but more options may be added in the
+/// future.
 #[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub struct PutOptions {
     /// The number of seconds from the time of the store for which the data should be available.
@@ -16,12 +22,34 @@ pub struct PutOptions {
 }
 
 impl PutOptions {
+    /// The value will be alive for this much time.
     pub fn ttl(duration: Duration) -> Self {
         Self::ttl_secs(duration.as_secs())
     }
 
+    /// The value will be alive for this many seconds.
     pub fn ttl_secs(seconds: u64) -> Self {
         PutOptions { ttl: Some(seconds) }
+    }
+
+    /// The value will be alive until this time.
+    ///
+    /// This function will panic if a time before the `UNIX_EPOCH` is used.
+    /// Unless you are a time traveler it doesn't make sense use dates in the
+    /// past anyway, so avoid doing that!
+    ///
+    /// In some cases the actual TTL may end up being a second after this time.
+    /// If the exact second is important, you may want to add a more accurate
+    /// timestamp into your value and check that yourself.
+    pub fn live_until(time: SystemTime) -> Self {
+        PutOptions {
+            ttl: Some(
+                time.duration_since(UNIX_EPOCH)
+                    .expect("The live_until time for a value is before the UNIX epoch")
+                    .as_secs()
+                    - get_system_time(),
+            ),
+        }
     }
 }
 
@@ -29,6 +57,7 @@ impl PutOptions {
 // While the Default derivation for `Option` is `None`, we want to explicitly
 // state that here.
 impl Default for PutOptions {
+    /// By default, there is no TTL. Values will live indefinitely.
     fn default() -> Self {
         Self { ttl: None }
     }
@@ -39,7 +68,7 @@ impl Default for PutOptions {
 /// This API defines the contract between Cuttlestore and the backends. Backends
 /// must implement this API, and follow the requirements when doing so.
 #[async_trait]
-pub trait CuttleBackend {
+pub(crate) trait CuttleBackend {
     /// If the given connection string matches this backend, create the backend.
     ///
     /// The backend MUST return a `None` if the connection string does not

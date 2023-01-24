@@ -62,17 +62,28 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     ///
     /// You connect to the store using a connection string. A few examples are:
     ///
-    /// - Cuttlestore::new("redis://127.0.0.1")
-    /// - Cuttlestore::new("filesystem://./in-working-folder")
-    /// - Cuttlestore::new("filesystem:///in-root-folder")
-    /// - Cuttlestore::new("sqlite://path/to/db/file")
-    /// - Cuttlestore::new("in-memory")
+    /// ```
+    /// use cuttlestore::Cuttlestore;
+    ///
+    /// # tokio_test::block_on(async {
+    /// let store: Cuttlestore<String> = Cuttlestore::new("redis://127.0.0.1").await.unwrap();
+    /// //                     or any other type with serde!
+    /// let store: Cuttlestore<String> = Cuttlestore::new("filesystem://./example-store/relative-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("filesystem:///tmp/absolute-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("sqlite://./example-store/some-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("in-memory").await.unwrap();
+    /// # })
+    /// ```
     ///
     /// The selection of the store happens at runtime, so you can use a
     /// user-provided string to select the store.
     ///
     /// Stores are only available if the corresponding feature is enabled. They
     /// all are by default, but mind that if you disable the default features.
+    ///
+    /// This will open the store with the default settings. You can configure
+    /// settings or open multiple stores that share the same connection using
+    /// the builder API, please check [CuttlestoreBuilder](crate::CuttlestoreBuilder).
     pub async fn new<C: AsRef<str>>(conn: C) -> Result<Self, CuttlestoreError> {
         Self::make(conn.as_ref(), CleanerOptions::default()).await
     }
@@ -119,6 +130,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         }
     }
 
+    /// Place a value into the store with the default settings.
     pub async fn put<Key: AsRef<str>>(
         &self,
         key: Key,
@@ -127,6 +139,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         self.put_with(key, value, PutOptions::default()).await
     }
 
+    /// Place a value into the store, configuring the settings for this operation.
     pub async fn put_with<Key: AsRef<str>>(
         &self,
         key: Key,
@@ -139,10 +152,14 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
             .await
     }
 
+    /// Remove a value from the store.
     pub async fn delete<Key: AsRef<str>>(&self, key: Key) -> Result<(), CuttlestoreError> {
         self.store.delete(self.key(key.as_ref())).await
     }
 
+    /// Get a value from the store.
+    ///
+    /// This operation is guaranteed to never return expired values.
     pub async fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<Value>, CuttlestoreError> {
         let payload = self.store.get(self.key(key.as_ref())).await?;
         let value = payload
@@ -154,6 +171,14 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(value)
     }
 
+    /// Get a stream of all the values in the store.
+    ///
+    /// This operation is guaranteed to never return expired values.
+    ///
+    /// This is a very inefficient operation as it has to iterate over all the
+    /// values in the store. (for now) using multiple stores connected to the
+    /// same backing storage won't improve the performance either, the scan will
+    /// iterate over values of all stores and discard ones for other stores.
     pub async fn scan(
         &self,
     ) -> Result<BoxStream<Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
