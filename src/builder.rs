@@ -57,8 +57,10 @@ impl CuttlestoreBuilder {
 
     /// Prefix every key in the store with this string.
     ///
-    /// The prefix will be applied for both get and put operations. The prefix
-    /// is stripped when scanning the store.
+    /// The prefix is entirely transparent to your application. It is
+    /// transparently applied during operations, and stripped when scanning the
+    /// store. You don't need to add the prefix yourself when calling `get` or
+    /// `put`.
     ///
     /// If you need multiple applications to share the same backing store,
     /// adding a unique prefix can help you avoid conflicts.
@@ -85,7 +87,9 @@ impl CuttlestoreBuilder {
     }
 }
 
-/// A connection to the underlying data store which you can use to
+/// A connection to the backing data store. You can use this connection to
+/// create one or more Cuttlestore instances, which will share their
+/// connections.
 pub struct CuttleConnection {
     /// The actual store backend.
     store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
@@ -125,6 +129,23 @@ impl std::fmt::Debug for CuttleConnection {
 }
 
 impl CuttleConnection {
+    /// Create a new Cuttlestore using this connection. All Cuttlestores created
+    /// on the same connection share the same underlying database connections.
+    ///
+    /// You must pick a unique prefix for each store you create. Otherwise keys
+    /// from different Cuttlestores will conflict with each other, and you will
+    /// get deserialization errors.
+    ///
+    /// The prefix must not change between different versions of your
+    /// application. Otherwise your application will not be able to find values
+    /// created in previous versions.
+    ///
+    /// The prefix you set here is combined with the prefix that is configured
+    /// for the entire connection in
+    /// [CuttlestoreBuilder](crate::CuttlestoreBuilder). Similarly the prefix is
+    /// entirely transparent to your application, you don't need to add the
+    /// prefix when calling `get` or `put`, and the prefix is stripped when you
+    /// `scan` the store.
     pub async fn make<Value: Serialize + DeserializeOwned + Send + Sync, C: AsRef<str>>(
         &self,
         prefix: C,

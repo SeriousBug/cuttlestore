@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-/// A basic key-value store.
+/// A basic key-value store. This is the primary API you'll interact with.
 ///
 /// The key-value store is associated with a single type that can be serialized
 /// and deserialized using Serde (`Serialize` + `DeserializeOwned`). The type
@@ -171,7 +171,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(value)
     }
 
-    /// Get a stream of all the values in the store.
+    /// Get a stream of all the key and value pairs in the store.
     ///
     /// This operation is guaranteed to never return expired values.
     ///

@@ -40,4 +40,5 @@ mod common;
 
 pub use api::Cuttlestore;
 pub use backend_api::PutOptions;
+pub use builder::CuttleConnection;
 pub use builder::CuttlestoreBuilder;

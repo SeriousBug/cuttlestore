@@ -35,7 +35,7 @@ impl PutOptions {
     /// The value will be alive until this time.
     ///
     /// This function will panic if a time before the `UNIX_EPOCH` is used.
-    /// Unless you are a time traveler it doesn't make sense use dates in the
+    /// Unless you are a time traveler it doesn't make sense to use dates in the
     /// past anyway, so avoid doing that!
     ///
     /// In some cases the actual TTL may end up being a second after this time.
