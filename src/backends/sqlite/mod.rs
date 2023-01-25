@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use async_stream::try_stream;
 use async_trait::async_trait;
 use futures::stream::BoxStream;
@@ -52,11 +54,11 @@ impl CuttleBackend for SqliteBackend {
         "sqlite"
     }
 
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
         let row: Option<(Vec<u8>, Option<i64>)> = sqlx::query_as(
             r#"SELECT value, live_until as "live_until?" FROM cuttlestore WHERE key = ?"#,
         )
-        .bind(key)
+        .bind(key.as_ref())
         .fetch_optional(&self.pool)
         .await?;
         match row {
@@ -73,16 +75,16 @@ impl CuttleBackend for SqliteBackend {
         }
     }
 
-    async fn put(
+    async fn put<'a>(
         &self,
-        key: &str,
+        key: Cow<'a, str>,
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
         // Oops, sqlite can't store i64's. Casting should be fine though for
         let live_until = options.ttl.map(|t| (t + get_system_time()) as i64);
         sqlx::query("INSERT INTO cuttlestore (key, value, live_until) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = ?, live_until = ?")
-            .bind(key)
+            .bind(key.as_ref())
             .bind(value)
             .bind(live_until)
             .bind(value)
@@ -93,9 +95,9 @@ impl CuttleBackend for SqliteBackend {
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), CuttlestoreError> {
+    async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError> {
         sqlx::query("DELETE FROM cuttlestore WHERE key = ?")
-            .bind(key)
+            .bind(key.as_ref())
             .execute(&self.pool)
             .await?;
 
@@ -116,7 +118,7 @@ impl CuttleBackend for SqliteBackend {
 
             if let Some(live_until) = live_until {
                 if live_until < get_system_time() as i64 {
-                    self.delete(&key).await?;
+                    self.delete(Cow::Borrowed(&key)).await?;
                     continue;
                   }
             }

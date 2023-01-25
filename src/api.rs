@@ -1,12 +1,12 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::{borrow::Cow, marker::PhantomData, sync::Arc};
 
 use async_stream::try_stream;
 use futures::stream::BoxStream;
-use lazy_regex::regex_captures;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     backend_api::{CuttleBackend, PutOptions},
+    builder::find_matching_backend,
     common::{
         cleanup::{Cleaner, CleanerOptions},
         CuttlestoreError,
@@ -14,7 +14,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-/// A basic key-value store.
+/// A basic key-value store. This is the primary API you'll interact with.
 ///
 /// The key-value store is associated with a single type that can be serialized
 /// and deserialized using Serde (`Serialize` + `DeserializeOwned`). The type
@@ -29,20 +29,24 @@ use crate::{
 /// that does not require scans or disable the scans if this is a problem.
 pub struct Cuttlestore<Value: Serialize + DeserializeOwned + Send + Sync> {
     /// The actual store backend.
-    store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
+    pub(crate) store: Arc<Box<dyn CuttleBackend + Send + Sync>>,
     #[allow(dead_code)]
     /// For backends that require it, a cleaner is created which will scan the
     /// store periodically to drop expired entries.
     ///
     /// While the cleaner property is not used directly, we need to keep the
     /// cleaner around because it will stop when dropped.
-    cleaner: Option<Arc<Cleaner>>,
+    pub(crate) cleaner: Option<Arc<Cleaner>>,
 
     /// A placeholder to hide that Value is not used within the struct. While
     /// unused, Value is part of the Cuttlestore type to ensure users don't
     /// accidentally put and get different types from the same store, which
     /// would fail.
-    phantom: std::marker::PhantomData<Value>,
+    pub(crate) phantom: std::marker::PhantomData<Value>,
+
+    /// If exists, the keys for all operations on this store will be prefix with
+    /// this value .
+    pub(crate) prefix: Option<String>,
 }
 
 impl<Value: Serialize + DeserializeOwned + Send + Sync> std::fmt::Debug for Cuttlestore<Value> {
@@ -58,17 +62,28 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     ///
     /// You connect to the store using a connection string. A few examples are:
     ///
-    /// - Cuttlestore::new("redis://127.0.0.1")
-    /// - Cuttlestore::new("filesystem://./in-working-folder")
-    /// - Cuttlestore::new("filesystem:///in-root-folder")
-    /// - Cuttlestore::new("sqlite://path/to/db/file")
-    /// - Cuttlestore::new("in-memory")
+    /// ```
+    /// use cuttlestore::Cuttlestore;
+    ///
+    /// # tokio_test::block_on(async {
+    /// let store: Cuttlestore<String> = Cuttlestore::new("redis://127.0.0.1").await.unwrap();
+    /// //                     or any other type with serde!
+    /// let store: Cuttlestore<String> = Cuttlestore::new("filesystem://./example-store/relative-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("filesystem:///tmp/absolute-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("sqlite://./example-store/some-path").await.unwrap();
+    /// let store: Cuttlestore<String> = Cuttlestore::new("in-memory").await.unwrap();
+    /// # })
+    /// ```
     ///
     /// The selection of the store happens at runtime, so you can use a
     /// user-provided string to select the store.
     ///
     /// Stores are only available if the corresponding feature is enabled. They
     /// all are by default, but mind that if you disable the default features.
+    ///
+    /// This will open the store with the default settings. You can configure
+    /// settings or open multiple stores that share the same connection using
+    /// the builder API, please check [CuttlestoreBuilder](crate::CuttlestoreBuilder).
     pub async fn new<C: AsRef<str>>(conn: C) -> Result<Self, CuttlestoreError> {
         Self::make(conn.as_ref(), CleanerOptions::default()).await
     }
@@ -86,10 +101,36 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(Cuttlestore {
             store,
             cleaner,
+            prefix: None,
             phantom: PhantomData,
         })
     }
 
+    /// Prefixes the key, if one is configured for this store.
+    fn key<'a>(&self, key: &'a str) -> Cow<'a, str> {
+        match &self.prefix {
+            Some(prefix) => Cow::Owned(format!("{prefix}:{key}")),
+            None => Cow::Borrowed(key),
+        }
+    }
+
+    /// Strip a prefix from the key, if one is configured for this store.
+    fn strip_prefix(&self, prefixed_key: String) -> Option<String> {
+        match &self.prefix {
+            Some(prefix) => match prefixed_key
+                // strip the prefix
+                .strip_prefix(prefix)
+                // then strip the : that connects the prefix
+                .map(|key| key.strip_prefix(':'))
+            {
+                Some(Some(key)) => Some(key.to_string()),
+                _ => None,
+            },
+            None => Some(prefixed_key),
+        }
+    }
+
+    /// Place a value into the store with the default settings.
     pub async fn put<Key: AsRef<str>>(
         &self,
         key: Key,
@@ -98,6 +139,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         self.put_with(key, value, PutOptions::default()).await
     }
 
+    /// Place a value into the store, configuring the settings for this operation.
     pub async fn put_with<Key: AsRef<str>>(
         &self,
         key: Key,
@@ -105,15 +147,21 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
         let payload = bincode::serialize(value)?;
-        self.store.put(key.as_ref(), &payload[..], options).await
+        self.store
+            .put(self.key(key.as_ref()), &payload[..], options)
+            .await
     }
 
+    /// Remove a value from the store.
     pub async fn delete<Key: AsRef<str>>(&self, key: Key) -> Result<(), CuttlestoreError> {
-        self.store.delete(key.as_ref()).await
+        self.store.delete(self.key(key.as_ref())).await
     }
 
+    /// Get a value from the store.
+    ///
+    /// This operation is guaranteed to never return expired values.
     pub async fn get<Key: AsRef<str>>(&self, key: Key) -> Result<Option<Value>, CuttlestoreError> {
-        let payload = self.store.get(key.as_ref()).await?;
+        let payload = self.store.get(self.key(key.as_ref())).await?;
         let value = payload
             .map(|payload| {
                 let value: Value = bincode::deserialize(&payload[..])?;
@@ -123,6 +171,14 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(value)
     }
 
+    /// Get a stream of all the key and value pairs in the store.
+    ///
+    /// This operation is guaranteed to never return expired values.
+    ///
+    /// This is a very inefficient operation as it has to iterate over all the
+    /// values in the store. (for now) using multiple stores connected to the
+    /// same backing storage won't improve the performance either, the scan will
+    /// iterate over values of all stores and discard ones for other stores.
     pub async fn scan(
         &self,
     ) -> Result<BoxStream<Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
@@ -131,62 +187,12 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         Ok(Box::pin(try_stream! {
             for await pair in stream {
                 let (key, payload) = pair?;
-                let value: Value = bincode::deserialize(&payload[..])?;
-                yield (key, value);
+                if let Some(key) = self.strip_prefix(key) {
+                    let value: Value = bincode::deserialize(&payload[..])?;
+
+                    yield (key, value);
+                }
             }
         }))
-    }
-}
-
-async fn find_matching_backend(
-    conn: &str,
-) -> Result<Box<dyn CuttleBackend + Send + Sync>, CuttlestoreError> {
-    #[cfg(feature = "backend-filesystem")]
-    if let Some(backend) = crate::backends::filesystem::FilesystemBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-in-memory")]
-    if let Some(backend) = crate::backends::in_memory::InMemoryBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-redis")]
-    if let Some(backend) = crate::backends::redis::RedisBackend::new(conn).await {
-        return Ok(backend?);
-    }
-    #[cfg(feature = "backend-sqlite")]
-    if let Some(backend) = crate::backends::sqlite::SqliteBackend::new(conn).await {
-        return Ok(backend?);
-    }
-
-    let maybe_backend = regex_captures!(r#"^([^:]+):"#, conn);
-    Err(CuttlestoreError::NoMatchingBackend(
-        maybe_backend
-            .map(|(_, name)| name)
-            .unwrap_or_else(|| conn)
-            .to_string(),
-    ))
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::common::CuttlestoreError;
-
-    use super::find_matching_backend;
-    use tokio::test;
-
-    #[test]
-    async fn error_on_no_backend() {
-        let result = find_matching_backend("does-not-exist://really").await;
-        let error_msg = match result {
-            Err(CuttlestoreError::NoMatchingBackend(msg)) => msg,
-            Err(err) => panic!("Unexpected error {err:?}"),
-            Ok(_) => panic!("Expected no backends, but found one"),
-        };
-        // The error message should not specify the part after ://, in case
-        // there are passwords or other secret information there.
-        assert!(
-            !error_msg.contains("really"),
-            "error message contains backend details"
-        )
     }
 }

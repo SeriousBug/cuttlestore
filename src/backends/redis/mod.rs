@@ -1,4 +1,4 @@
-use std::{collections::HashMap, pin::Pin};
+use std::{borrow::Cow, collections::HashMap, pin::Pin};
 
 use async_trait::async_trait;
 use bb8::Pool;
@@ -59,33 +59,33 @@ impl CuttleBackend for RedisBackend {
         "redis"
     }
 
-    async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
         let mut connection = self.pool.get().await?;
-        let payload: Option<Vec<u8>> = connection.get(key).await?;
+        let payload: Option<Vec<u8>> = connection.get(key.as_ref()).await?;
         Ok(payload)
     }
 
-    async fn put(
+    async fn put<'a>(
         &self,
-        key: &str,
+        key: Cow<'a, str>,
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
         let mut connection = self.pool.get().await?;
 
         if let Some(ttl) = options.ttl {
-            let _: () = connection.set_ex(key, value, ttl as usize).await?;
+            let _: () = connection.set_ex(key.as_ref(), value, ttl as usize).await?;
         } else {
-            let _: () = connection.set(key, value).await?;
+            let _: () = connection.set(key.as_ref(), value).await?;
         }
 
         Ok(())
     }
 
-    async fn delete(&self, key: &str) -> Result<(), CuttlestoreError> {
+    async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError> {
         let mut connection = self.pool.get().await?;
 
-        let _: () = connection.del(key).await?;
+        let _: () = connection.del(key.as_ref()).await?;
 
         Ok(())
     }
