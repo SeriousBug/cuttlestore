@@ -23,9 +23,9 @@
 ///   .put_with("impossible", &mission, PutOptions::ttl_secs(60))
 ///   .await
 ///   .unwrap();
-/// 
+///
 /// // Later
-/// 
+///
 /// let value: Option<SelfDestructingMessage> = store.get("impossible").await.unwrap();
 /// println!("Message says: {value:?}");
 /// # })
