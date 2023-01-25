@@ -22,13 +22,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
       - name: Install Rust
         run: rustup toolchain install stable --component llvm-tools-preview
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-      - uses: Swatinem/rust-cache@v2
-      - name: Generate code coverage
-        run: cargo llvm-cov --all-features --benches --examples --tests --doc --lcov --output-path lcov.info
+      - name: Run doc tests
+        # llvm-cov has issues with doc tests, so we'll run those separately
+        run: cargo test --doc
+      - name: Run tests
+        run: cargo llvm-cov --all-features --benches --examples --tests --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
