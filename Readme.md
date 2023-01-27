@@ -1,5 +1,6 @@
 # [Cuttlestore](https://github.com/SeriousBug/Cuttlestore)
 
+[![docs](https://img.shields.io/docsrs/cuttlestore)](https://docs.rs/cuttlestore/latest/cuttlestore/)
 [![tests](https://img.shields.io/github/actions/workflow/status/SeriousBug/cuttlestore/test.yml?label=tests&branch=main)](https://github.com/SeriousBug/cuttlestore/actions/workflows/test.yml)
 [![Test coverage report](https://img.shields.io/codecov/c/github/SeriousBug/cuttlestore)](https://codecov.io/gh/SeriousBug/cuttlestore)
 [![lint checks](https://img.shields.io/github/actions/workflow/status/SeriousBug/cuttlestore/lint.yml?label=lints&branch=main)](https://github.com/SeriousBug/cuttlestore/actions/workflows/lint.yml)
@@ -75,6 +76,10 @@ cuttlestore = { version = "0.2", default-features = false, features = [
   "logging-tracing",
 ] }
 ```
+
+You're now ready to use Cuttlestore! See the example above, check the
+[documentation](https://docs.rs/cuttlestore/latest/cuttlestore/), and find
+[more examples in the repository](https://github.com/SeriousBug/cuttlestore/tree/main/examples).
 
 ## Overview
 
