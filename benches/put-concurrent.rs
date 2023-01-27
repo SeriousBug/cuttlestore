@@ -24,7 +24,7 @@ async fn load(store: Cuttlestore<String>, count_keys: u64) {
 
 fn criterion_benchmark(c: &mut Criterion) {
     let count_entries = 1000;
-    let mut group = c.benchmark_group(format!("put {count_entries} entries concurrently"));
+    let mut group = c.benchmark_group(format!("put {count_entries} times concurrently"));
     group
         .measurement_time(Duration::from_secs(10))
         .sample_size(10);
