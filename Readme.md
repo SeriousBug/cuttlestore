@@ -48,19 +48,32 @@ async fn main() {
 
 Cuttlestore currently has support for:
 
-| Name       | Feature            | Connection string | Description                                                                                     |
-| ---------- | ------------------ | ----------------- | ----------------------------------------------------------------------------------------------- |
-| Redis      | backend-redis      | redis://127.0.0.1 | Backed by Redis. This will get you the best scalability.                                        |
-| Sqlite     | backend-sqlite     | sqlite://path     | An sqlite database used as a key-value store. Best performance if scalability is not a concern. |
-| Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            |
-| In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      |
+| Name       | Feature            | Connection string | Description                                                                                     | Enabled by default |
+| ---------- | ------------------ | ----------------- | ----------------------------------------------------------------------------------------------- | ------------------ |
+| Redis      | backend-redis      | redis://127.0.0.1 | Backed by Redis. This will get you the best scalability.                                        | Yes                |
+| Sqlite     | backend-sqlite     | sqlite://path     | An sqlite database used as a key-value store. Best performance if scalability is not a concern. | Yes                |
+| Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            | No                 |
+| In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
 
 ## Installing
 
 Add Cuttlestore to your `Cargo.toml`:
 
 ```toml
-cuttlestore = "0.1"
+cuttlestore = "0.2"
+```
+
+If you want to disable or enable some of the backends, disable the default
+features and pick the ones you want:
+
+```toml
+cuttlestore = { version = "0.2", default-features = false, features = [
+  # Only leave redis and sqlite enabled
+  "backend-redis",
+  "backend-sqlite",
+  # Remember to enable this or `logging-log`
+  "logging-tracing",
+] }
 ```
 
 ## Overview
@@ -88,7 +101,7 @@ The library can log errors with both
 can switch to `log` by enabling the feature:
 
 ```toml
-cuttlestore = { version = "0.1", default-features = false, features = [
+cuttlestore = { version = "0.2", default-features = false, features = [
     "logging-log",
     # remember to enable the backends!
     "backend-redis",
