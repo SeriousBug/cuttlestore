@@ -41,9 +41,7 @@ async fn test(store: Cuttlestore<String>, count_keys: u64, checks: u64) {
 fn criterion_benchmark(c: &mut Criterion) {
     let count_entries = 1000;
     let count_checks = 1000;
-    let mut group = c.benchmark_group(format!(
-        "get {count_checks} times from keyspace of {count_entries} entries sequentially, 50% hit rate"
-    ));
+    let mut group = c.benchmark_group(format!("get {count_checks} times sequentially"));
     group
         .measurement_time(Duration::from_secs(10))
         .sample_size(10);
