@@ -1,5 +1,3 @@
-use std::io;
-
 #[derive(Debug, thiserror::Error)]
 pub enum CuttlestoreError {
     /// Connection string does not specify any supported backends.
@@ -22,7 +20,7 @@ pub enum CuttlestoreError {
     /// folder and disk space is available.
     #[cfg(feature = "backend-filesystem")]
     #[error("Failed to access the file system: {0}")]
-    FileError(#[from] io::Error),
+    FileError(#[from] std::io::Error),
 
     /// An error happened when opening or accessing the sqlite database.
     #[cfg(feature = "backend-sqlite")]
