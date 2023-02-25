@@ -24,8 +24,9 @@ logging-log = ["log"]
 # Backend customization
 
 # For sqlite, we need to pick between native TLS and rustls.
-backend-sqlite-native-tls = ["sqlx", "sqlite-native-tls"]
-backend-sqlite-rustls = ["sqlx", "sqlite-rustls"]
+backend-sqlite-core = []
+backend-sqlite-native-tls = ["sqlx", "sqlite-native-tls", "backend-sqlite-core"]
+backend-sqlite-rustls = ["sqlx", "sqlite-rustls", "backend-sqlite-core"]
 sqlite-native-tls = ["sqlx/runtime-tokio-native-tls"]
 sqlite-rustls = ["sqlx/runtime-tokio-rustls"]
 

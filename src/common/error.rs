@@ -23,7 +23,7 @@ pub enum CuttlestoreError {
     FileError(#[from] std::io::Error),
 
     /// An error happened when opening or accessing the sqlite database.
-    #[cfg(feature = "backend-sqlite")]
+    #[cfg(feature = "backend-sqlite-core")]
     #[error("Failed to access the sqlite database: {0}")]
     DatabaseError(#[from] sqlx::Error),
 

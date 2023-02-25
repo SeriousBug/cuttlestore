@@ -4,5 +4,5 @@ pub(crate) mod filesystem;
 pub(crate) mod in_memory;
 #[cfg(feature = "backend-redis")]
 pub(crate) mod redis;
-#[cfg(feature = "backend-sqlite")]
+#[cfg(feature = "backend-sqlite-core")]
 pub(crate) mod sqlite;
