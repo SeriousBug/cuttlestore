@@ -6,6 +6,7 @@ on:
       - benches/*
       - tests/*
       - .github/workflows/lint.yml
+      - Cargo.toml
 name: lint checks
 jobs:
   lint:

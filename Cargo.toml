@@ -18,9 +18,17 @@ default = [
 backend-redis = ["redis", "bb8", "bb8-redis"]
 backend-filesystem = []
 backend-in-memory = ["dashmap"]
-backend-sqlite = ["sqlx"]
+backend-sqlite = ["backend-sqlite-native-tls"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
+# Backend customization
+
+# For sqlite, we need to pick between native TLS and rustls.
+backend-sqlite-core = []
+backend-sqlite-native-tls = ["sqlx", "sqlite-native-tls", "backend-sqlite-core"]
+backend-sqlite-rustls = ["sqlx", "sqlite-rustls", "backend-sqlite-core"]
+sqlite-native-tls = ["sqlx/runtime-tokio-native-tls"]
+sqlite-rustls = ["sqlx/runtime-tokio-rustls"]
 
 [dependencies]
 # For async functions in trait definitions
@@ -65,8 +73,8 @@ bb8-redis = { version = "0.12", optional = true }
 # Sqlite
 sqlx = { version = "0.6", default-features = false, features = [
   "sqlite",
-  "runtime-tokio-native-tls",
 ], optional = true }
+
 
 [dev-dependencies]
 # For benchmarks

@@ -178,7 +178,7 @@ pub(crate) async fn find_matching_backend(
     if let Some(backend) = crate::backends::redis::RedisBackend::new(conn).await {
         return Ok(backend?);
     }
-    #[cfg(feature = "backend-sqlite")]
+    #[cfg(feature = "backend-sqlite-core")]
     if let Some(backend) = crate::backends::sqlite::SqliteBackend::new(conn).await {
         return Ok(backend?);
     }
