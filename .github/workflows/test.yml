@@ -9,6 +9,7 @@ on:
       - benches/*
       - tests/*
       - .github/workflows/test.yml
+      - Cargo.toml
   pull_request:
     branches:
       - "*"
@@ -16,6 +17,9 @@ on:
       - src/*
       - examples/*
       - benches/*
+      - tests/*
+      - .github/workflows/test.yml
+      - Cargo.toml
 jobs:
   test:
     name: test
