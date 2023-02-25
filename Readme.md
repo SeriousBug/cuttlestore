@@ -149,6 +149,9 @@ scanning the database and deleting expired entries on a best-effort basis. This
 scan uses a Tokio task, meaning it will run within your existing Tokio thread
 pool.
 
+For sqlite, you can enable the feature `backend-sqlite-native-tls` or
+`backend-sqlite-rustls` to pick between native TLS or Rustls. `backend-sqlite` is equal to `backend-sqlite-native-tls`.
+
 ### Filesystem
 
 Cuttlestore can be configured to use a folder as a key value store. When using

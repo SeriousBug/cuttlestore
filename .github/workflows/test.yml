@@ -29,9 +29,12 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Run doc tests
         # llvm-cov has issues with doc tests, so we'll run those separately
-        run: cargo test --doc
+        run: cargo test --features 'backend-filesystem' --doc
+      - name: Test alternative flags
+        # Testing some alternative flag configurations, like rustls and no logging
+        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls' --no-default-features --benches --examples --tests
       - name: Run tests
-        run: cargo llvm-cov --all-features --benches --examples --tests --lcov --output-path lcov.info
+        run: cargo llvm-cov --features 'backend-filesystem' --benches --examples --tests --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
