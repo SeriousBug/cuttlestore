@@ -20,6 +20,7 @@ backend-filesystem = []
 backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
+backend-couchdb = ["backend-couchdb-native-tls"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization
@@ -30,6 +31,14 @@ backend-sqlite-native-tls = ["sqlx", "sqlite-native-tls", "backend-sqlite-core"]
 backend-sqlite-rustls = ["sqlx", "sqlite-rustls", "backend-sqlite-core"]
 sqlite-native-tls = ["sqlx/runtime-tokio-native-tls"]
 sqlite-rustls = ["sqlx/runtime-tokio-rustls"]
+
+# For couchdb, we similarly let the user pick between native TLS and rustls
+# for the underlying reqwest HTTP client.
+backend-couchdb-core = ["reqwest", "serde_json"]
+backend-couchdb-native-tls = ["couchdb-native-tls", "backend-couchdb-core"]
+backend-couchdb-rustls = ["couchdb-rustls", "backend-couchdb-core"]
+couchdb-native-tls = ["reqwest/native-tls"]
+couchdb-rustls = ["reqwest/rustls-tls"]
 
 [dependencies]
 # For async functions in trait definitions
@@ -86,6 +95,12 @@ aws-sdk-dynamodb = { version = "1", optional = true, features = [
 aws-credential-types = { version = "1", optional = true, features = [
   "hardcoded-credentials",
 ] }
+
+# CouchDB
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+], optional = true }
+serde_json = { version = "1.0", optional = true }
 
 
 [dev-dependencies]

@@ -56,6 +56,7 @@ Cuttlestore currently has support for:
 | Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            | No                 |
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
 | DynamoDB   | backend-dynamodb   | dynamodb://region/table | Backed by Amazon DynamoDB. A managed, scalable option that doesn't require running your own server. | No             |
+| CouchDB    | backend-couchdb    | couchdb://host/db | Apache CouchDB backend, useful when you already operate a CouchDB cluster.                      | No                 |
 
 ## Installing
 
@@ -206,6 +207,28 @@ The in-memory backend is a multithreaded in-memory key-value store backed by
 
 The performance is the best, but everything is kept in-memory so there is no
 durability.
+
+### CouchDB
+
+Cuttlestore can use an [Apache CouchDB](https://couchdb.apache.org/) database
+as a key-value store. Each Cuttlestore key becomes a document in the database,
+and the values are stored as base64-encoded strings on those documents. The
+database is automatically created if it does not already exist.
+
+The connection string follows the form
+`couchdb://[user:pass@]host[:port]/database`. To use HTTPS, use the
+`couchdbs://` scheme instead. For example:
+`couchdbs://admin:hunter2@couch.example.com/my-store`.
+
+CouchDB does not have built-in TTL support, so TTL is emulated by periodically
+scanning the database and deleting expired entries on a best-effort basis.
+This scan uses a Tokio task, meaning it will run within your existing Tokio
+thread pool.
+
+For CouchDB, you can enable the feature `backend-couchdb-native-tls` or
+`backend-couchdb-rustls` to pick between native TLS or Rustls for the
+underlying HTTP client. `backend-couchdb` is equal to
+`backend-couchdb-native-tls`.
 
 ## TTL
 
