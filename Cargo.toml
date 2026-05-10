@@ -20,6 +20,7 @@ backend-filesystem = []
 backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
+backend-couchdb = ["reqwest", "base64", "serde_json"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization
@@ -86,6 +87,14 @@ aws-sdk-dynamodb = { version = "1", optional = true, features = [
 aws-credential-types = { version = "1", optional = true, features = [
   "hardcoded-credentials",
 ] }
+
+# CouchDB
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "rustls-tls",
+], optional = true }
+base64 = { version = "0.22", optional = true }
+serde_json = { version = "1.0", optional = true }
 
 
 [dev-dependencies]

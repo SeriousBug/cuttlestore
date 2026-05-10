@@ -45,4 +45,19 @@ pub enum CuttlestoreError {
     #[cfg(feature = "backend-dynamodb")]
     #[error("Failed to access DynamoDB: {0}")]
     DynamoDBError(String),
+
+    /// An error happened when communicating with the CouchDB server over HTTP.
+    #[cfg(feature = "backend-couchdb")]
+    #[error("Failed to access CouchDB: {0}")]
+    CouchdbHttpError(#[from] reqwest::Error),
+
+    /// CouchDB returned an unexpected status code or error response.
+    #[cfg(feature = "backend-couchdb")]
+    #[error("CouchDB error: {0}")]
+    CouchdbError(String),
+
+    /// Failed to decode a base64-encoded value, used by the CouchDB backend.
+    #[cfg(feature = "backend-couchdb")]
+    #[error("Failed to decode base64 data: {0}")]
+    Base64Error(#[from] base64::DecodeError),
 }

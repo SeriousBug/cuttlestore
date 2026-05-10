@@ -186,6 +186,10 @@ pub(crate) async fn find_matching_backend(
     if let Some(backend) = crate::backends::dynamodb::DynamoDBBackend::new(conn).await {
         return Ok(backend?);
     }
+    #[cfg(feature = "backend-couchdb")]
+    if let Some(backend) = crate::backends::couchdb::CouchdbBackend::new(conn).await {
+        return Ok(backend?);
+    }
 
     let maybe_backend = regex_captures!(r#"^([^:]+):"#, conn);
     Err(CuttlestoreError::NoMatchingBackend(

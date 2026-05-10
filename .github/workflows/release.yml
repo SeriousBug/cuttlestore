@@ -12,12 +12,19 @@ jobs:
       - name: Run doc tests
         run: cargo test --features 'backend-filesystem' --doc
       - name: Run tests
-        run: cargo test --features 'backend-filesystem' --benches --examples --tests
+        run: cargo test --features 'backend-filesystem,backend-couchdb' --benches --examples --tests
     services:
       redis:
         image: redis:7-alpine
         ports:
           - 6379:6379
+      couchdb:
+        image: couchdb:3
+        ports:
+          - 5984:5984
+        env:
+          COUCHDB_USER: admin
+          COUCHDB_PASSWORD: password
   release:
     name: release
     needs: [tests]
