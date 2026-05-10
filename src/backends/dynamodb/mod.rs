@@ -20,8 +20,15 @@ use crate::{
     common::{get_system_time, CuttlestoreError},
 };
 
-fn dynamo_err<E: Display>(err: E) -> CuttlestoreError {
-    CuttlestoreError::DynamoDBError(err.to_string())
+fn dynamo_err<E: std::error::Error + 'static>(err: E) -> CuttlestoreError {
+    let mut msg = err.to_string();
+    let mut source: Option<&dyn std::error::Error> = err.source();
+    while let Some(s) = source {
+        msg.push_str(": ");
+        msg.push_str(&s.to_string());
+        source = s.source();
+    }
+    CuttlestoreError::DynamoDBError(msg)
 }
 
 const KEY_ATTR: &str = "key";
