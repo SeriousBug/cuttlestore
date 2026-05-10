@@ -6,3 +6,5 @@ pub(crate) mod in_memory;
 pub(crate) mod redis;
 #[cfg(feature = "backend-sqlite-core")]
 pub(crate) mod sqlite;
+#[cfg(feature = "backend-dynamodb")]
+pub(crate) mod dynamodb;

@@ -19,6 +19,7 @@ backend-redis = ["redis", "bb8", "bb8-redis"]
 backend-filesystem = []
 backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
+backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization
@@ -74,6 +75,17 @@ bb8-redis = { version = "0.26", optional = true }
 sqlx = { version = "0.8", default-features = false, features = [
   "sqlite",
 ], optional = true }
+
+# DynamoDB
+aws-config = { version = "1.8", optional = true, features = [
+  "behavior-version-latest",
+] }
+aws-sdk-dynamodb = { version = "1", optional = true, features = [
+  "behavior-version-latest",
+] }
+aws-credential-types = { version = "1", optional = true, features = [
+  "hardcoded-credentials",
+] }
 
 
 [dev-dependencies]

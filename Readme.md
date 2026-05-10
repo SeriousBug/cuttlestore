@@ -55,6 +55,7 @@ Cuttlestore currently has support for:
 | Sqlite     | backend-sqlite     | sqlite://path     | An sqlite database used as a key-value store. Best performance if scalability is not a concern. | Yes                |
 | Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            | No                 |
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
+| DynamoDB   | backend-dynamodb   | dynamodb://region/table | Backed by Amazon DynamoDB. A managed, scalable option that doesn't require running your own server. | No             |
 
 ## Installing
 
@@ -165,6 +166,38 @@ corruption is not expected.
 The ttl feature is supported by periodically scanning the database and deleting
 expired entries on a best-effort basis. This scan uses a Tokio task, meaning it
 will run within your existing Tokio thread pool.
+
+### DynamoDB
+
+Cuttlestore can use Amazon DynamoDB as a backing store. The connection string
+takes the form `dynamodb://<region>/<table>`. The table is automatically
+created if it does not exist, using on-demand (`PAY_PER_REQUEST`) billing, and
+DynamoDB's native TTL feature is enabled on the `live_until` attribute.
+
+For example, to connect to a `cuttlestore` table in `us-east-1`:
+
+```
+dynamodb://us-east-1/cuttlestore
+```
+
+You can supply credentials and a custom endpoint through query string
+parameters: `endpoint`, `access_key`, and `secret_key`. The endpoint is mostly
+useful for pointing at a local DynamoDB instance (such as the official
+[`amazon/dynamodb-local`](https://hub.docker.com/r/amazon/dynamodb-local)
+Docker image) for testing:
+
+```
+dynamodb://us-east-1/cuttlestore-test?endpoint=http://localhost:8000
+```
+
+If `endpoint` is set and no credentials are provided, dummy credentials are
+used (DynamoDB Local ignores them). When connecting to real AWS, omit the
+`endpoint` parameter and credentials will be sourced from the standard AWS
+chain (environment variables, shared profile, IAM role, etc.).
+
+DynamoDB's native TTL deletes expired items on its own schedule, which can
+take up to 48 hours. Cuttlestore additionally filters expired items in `get`
+and `scan` so they are never returned to your application.
 
 #### In-Memory
 
