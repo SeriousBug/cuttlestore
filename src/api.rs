@@ -181,7 +181,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     /// iterate over values of all stores and discard ones for other stores.
     pub async fn scan(
         &self,
-    ) -> Result<BoxStream<Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
+    ) -> Result<BoxStream<'_, Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
         let stream = self.store.scan().await?;
 
         Ok(Box::pin(try_stream! {
