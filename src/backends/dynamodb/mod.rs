@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashMap, fmt::Display};
+use std::{borrow::Cow, collections::HashMap};
 
 use async_stream::try_stream;
 use async_trait::async_trait;
@@ -49,10 +49,6 @@ impl DynamoDBBackend {
         let mut loader =
             aws_config::defaults(BehaviorVersion::latest()).region(Region::new(region.to_string()));
 
-        if let Some(endpoint) = args.get("endpoint") {
-            loader = loader.endpoint_url(*endpoint);
-        }
-
         match (args.get("access_key"), args.get("secret_key")) {
             (Some(access), Some(secret)) => {
                 loader =
@@ -73,8 +69,15 @@ impl DynamoDBBackend {
             }
         }
 
-        let config = loader.load().await;
-        let client = Client::new(&config);
+        let shared = loader.load().await;
+        // Apply endpoint_url at the DynamoDB client config level so DynamoDB's
+        // account-based endpoint discovery cannot override it. Setting it on
+        // the shared `aws_config` does not always take effect for DynamoDB.
+        let mut dynamo_config = aws_sdk_dynamodb::config::Builder::from(&shared);
+        if let Some(endpoint) = args.get("endpoint") {
+            dynamo_config = dynamo_config.endpoint_url(*endpoint);
+        }
+        let client = Client::from_conf(dynamo_config.build());
 
         let backend = DynamoDBBackend {
             client,
