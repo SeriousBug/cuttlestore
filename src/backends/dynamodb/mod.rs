@@ -55,14 +55,15 @@ impl DynamoDBBackend {
                     loader.credentials_provider(Credentials::from_keys(*access, *secret, None));
             }
             _ => {
-                // For DynamoDB Local, the SDK still requires credentials to be
-                // present even though they are ignored by the server. If the
-                // user did not configure any, fall back to test credentials so
-                // local development works without setting AWS_* env vars.
+                // For DynamoDB Local, the SDK still requires credentials to
+                // be present, and the server validates the access key has a
+                // valid AWS format (uppercase alphanumeric). Fall back to a
+                // standard dummy key so local development works without
+                // setting AWS_* env vars.
                 if args.contains_key("endpoint") {
                     loader = loader.credentials_provider(Credentials::from_keys(
-                        "cuttlestore-local",
-                        "cuttlestore-local",
+                        "AKIAIOSFODNN7EXAMPLE",
+                        "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
                         None,
                     ));
                 }
@@ -70,11 +71,11 @@ impl DynamoDBBackend {
         }
 
         let shared = loader.load().await;
-        // Apply endpoint_url at the DynamoDB client config level so DynamoDB's
-        // account-based endpoint discovery cannot override it. Setting it on
-        // the shared `aws_config` does not always take effect for DynamoDB.
         let mut dynamo_config = aws_sdk_dynamodb::config::Builder::from(&shared);
         if let Some(endpoint) = args.get("endpoint") {
+            // Set endpoint_url on the DynamoDB client config rather than the
+            // shared aws_config, so DynamoDB's endpoint resolver cannot
+            // override it.
             dynamo_config = dynamo_config.endpoint_url(*endpoint);
         }
         let client = Client::from_conf(dynamo_config.build());

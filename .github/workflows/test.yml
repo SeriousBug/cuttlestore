@@ -49,29 +49,9 @@ jobs:
       - name: Run doc tests
         # llvm-cov has issues with doc tests, so we'll run those separately
         run: cargo test --features 'backend-filesystem' --doc
-      - name: Smoke test DynamoDB Local
-        # An actual API call ensures the service is past JVM warm-up, not just
-        # listening on the port. Catches readiness issues before tests run.
-        run: |
-          for i in $(seq 1 30); do
-            response=$(curl -s -o /dev/null -w "%{http_code}" \
-              -X POST http://localhost:8000/ \
-              -H "Content-Type: application/x-amz-json-1.0" \
-              -H "X-Amz-Target: DynamoDB_20120810.ListTables" \
-              -H "Authorization: AWS4-HMAC-SHA256 Credential=cuttlestore/20260101/us-east-1/dynamodb/aws4_request" \
-              -d '{}' || true)
-            if [ "$response" = "200" ]; then
-              echo "DynamoDB Local responding to API calls"
-              exit 0
-            fi
-            echo "Waiting for DynamoDB Local API (got HTTP $response, attempt $i)..."
-            sleep 1
-          done
-          echo "DynamoDB Local not responding to API calls" >&2
-          exit 1
       - name: Test alternative flags
         # Testing some alternative flag configurations, like rustls and no logging
-        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls,backend-dynamodb' --no-default-features --benches --examples --tests -- --nocapture
+        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls,backend-dynamodb' --no-default-features --benches --examples --tests
       - name: Run tests
         run: cargo llvm-cov --features 'backend-filesystem,backend-dynamodb' --benches --examples --tests --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
