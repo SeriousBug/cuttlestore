@@ -80,10 +80,10 @@ pub async fn scan(store: &Cuttlestore<String>) {
 
 pub async fn suite(store: &Cuttlestore<String>) {
     tokio::join!(
-        get_missing(&store),
-        get_then_delete(&store),
-        timeout(&store),
-        overwrite(&store),
-        scan(&store),
+        get_missing(store),
+        get_then_delete(store),
+        timeout(store),
+        overwrite(store),
+        scan(store),
     );
 }

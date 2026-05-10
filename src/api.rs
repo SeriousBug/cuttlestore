@@ -146,7 +146,7 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         value: &Value,
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
-        let payload = bincode::serialize(value)?;
+        let payload = bincode::serde::encode_to_vec(value, bincode::config::legacy())?;
         self.store
             .put(self.key(key.as_ref()), &payload[..], options)
             .await
@@ -164,7 +164,8 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
         let payload = self.store.get(self.key(key.as_ref())).await?;
         let value = payload
             .map(|payload| {
-                let value: Value = bincode::deserialize(&payload[..])?;
+                let (value, _): (Value, _) =
+                    bincode::serde::decode_from_slice(&payload[..], bincode::config::legacy())?;
                 Ok::<Value, CuttlestoreError>(value)
             })
             .transpose()?;
@@ -181,14 +182,15 @@ impl<Value: Serialize + DeserializeOwned + Send + Sync> Cuttlestore<Value> {
     /// iterate over values of all stores and discard ones for other stores.
     pub async fn scan(
         &self,
-    ) -> Result<BoxStream<Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
+    ) -> Result<BoxStream<'_, Result<(String, Value), CuttlestoreError>>, CuttlestoreError> {
         let stream = self.store.scan().await?;
 
         Ok(Box::pin(try_stream! {
             for await pair in stream {
                 let (key, payload) = pair?;
                 if let Some(key) = self.strip_prefix(key) {
-                    let value: Value = bincode::deserialize(&payload[..])?;
+                    let (value, _): (Value, _) =
+                        bincode::serde::decode_from_slice(&payload[..], bincode::config::legacy())?;
 
                     yield (key, value);
                 }

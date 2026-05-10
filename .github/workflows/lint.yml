@@ -12,7 +12,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
       - name: Add clippy
         run: rustup component add clippy
@@ -23,6 +23,6 @@ jobs:
     name: format check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check

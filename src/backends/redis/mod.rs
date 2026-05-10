@@ -20,10 +20,16 @@ pub(crate) struct RedisBackend {
 
 impl RedisBackend {
     async fn new(address: &str, args: HashMap<&str, &str>) -> Result<Box<Self>, CuttlestoreError> {
-        let mut info = address.into_connection_info()?;
+        let info = address.into_connection_info()?;
 
-        info.redis.username = args.get("username").map(|v| v.to_string());
-        info.redis.password = args.get("password").map(|v| v.to_string());
+        let mut redis_settings = info.redis_settings().clone();
+        if let Some(username) = args.get("username") {
+            redis_settings = redis_settings.set_username(username);
+        }
+        if let Some(password) = args.get("password") {
+            redis_settings = redis_settings.set_password(password);
+        }
+        let info = info.set_redis_settings(redis_settings);
 
         let manager = RedisConnectionManager::new(info)?;
         let pool = Pool::builder().build(manager).await?;
@@ -74,7 +80,7 @@ impl CuttleBackend for RedisBackend {
         let mut connection = self.pool.get().await?;
 
         if let Some(ttl) = options.ttl {
-            let _: () = connection.set_ex(key.as_ref(), value, ttl as usize).await?;
+            let _: () = connection.set_ex(key.as_ref(), value, ttl).await?;
         } else {
             let _: () = connection.set(key.as_ref(), value).await?;
         }
@@ -144,6 +150,13 @@ impl RedisScanStream {
                     }
                 };
                 if let Some(key) = keys.next_item().await {
+                    let key = match key {
+                        Ok(key) => key,
+                        Err(err) => {
+                            tx.send(Err(err.into())).await.ok();
+                            return;
+                        }
+                    };
                     let value: Result<Option<Vec<u8>>, RedisError> = connection.get(&key).await;
                     match value {
                         Ok(Some(value)) => {

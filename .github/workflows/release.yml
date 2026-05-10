@@ -5,7 +5,7 @@ jobs:
     name: tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
       - name: Install Rust
         run: rustup toolchain install stable
@@ -23,7 +23,7 @@ jobs:
     needs: [tests]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v5
       - name: Publish crate
         run: cargo publish --token ${CRATES_TOKEN}
         env:

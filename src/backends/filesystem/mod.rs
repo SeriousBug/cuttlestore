@@ -33,8 +33,11 @@ impl FilesystemBackend {
     async fn get(&self, key: &str) -> Result<Option<Vec<u8>>, CuttlestoreError> {
         match tokio::fs::read(self.base_folder.join(key)).await {
             Ok(read) => {
-                let value: StoredValue = match bincode::deserialize(&read) {
-                    Ok(val) => val,
+                let value: StoredValue = match bincode::serde::borrow_decode_from_slice(
+                    &read,
+                    bincode::config::legacy(),
+                ) {
+                    Ok((val, _)) => val,
                     Err(err) => {
                         // Decoding failed. This likely suggests data corruption,
                         // such as power loss while file was being written out.
@@ -100,10 +103,13 @@ impl CuttleBackend for FilesystemBackend {
         value: &[u8],
         options: PutOptions,
     ) -> Result<(), CuttlestoreError> {
-        let encoded_value = bincode::serialize(&StoredValue {
-            payload: value,
-            live_until: options.ttl.map(|v| v + get_system_time()),
-        })?;
+        let encoded_value = bincode::serde::encode_to_vec(
+            StoredValue {
+                payload: value,
+                live_until: options.ttl.map(|v| v + get_system_time()),
+            },
+            bincode::config::legacy(),
+        )?;
 
         let mut file = tokio::fs::File::create(self.base_folder.join(key.as_ref())).await?;
         file.write_all(&encoded_value[..]).await?;

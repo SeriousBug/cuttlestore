@@ -26,7 +26,7 @@ async fn test_in_memory() {
 
     assert_eq!(pairs.len(), 1);
     assert_eq!(
-        pairs.get(0).unwrap(),
+        pairs.first().unwrap(),
         &("bar".to_string(), "baz".to_string())
     );
 }
