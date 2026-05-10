@@ -24,6 +24,10 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
+    env:
+      # Avoid stalls from the SDK probing EC2 instance metadata in CI.
+      AWS_EC2_METADATA_DISABLED: "true"
+      RUST_BACKTRACE: "1"
     steps:
       - uses: actions/checkout@v5
       - uses: Swatinem/rust-cache@v2
@@ -31,14 +35,25 @@ jobs:
         run: rustup toolchain install stable --component llvm-tools-preview
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Wait for DynamoDB Local
+        run: |
+          for i in $(seq 1 30); do
+            if (echo > /dev/tcp/localhost/8000) >/dev/null 2>&1; then
+              echo "DynamoDB Local is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "DynamoDB Local did not become ready in time" >&2
+          exit 1
       - name: Run doc tests
         # llvm-cov has issues with doc tests, so we'll run those separately
         run: cargo test --features 'backend-filesystem' --doc
       - name: Test alternative flags
         # Testing some alternative flag configurations, like rustls and no logging
-        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls' --no-default-features --benches --examples --tests
+        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls,backend-dynamodb' --no-default-features --benches --examples --tests
       - name: Run tests
-        run: cargo llvm-cov --features 'backend-filesystem' --benches --examples --tests --lcov --output-path lcov.info
+        run: cargo llvm-cov --features 'backend-filesystem,backend-dynamodb' --benches --examples --tests --lcov --output-path lcov.info
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -49,3 +64,7 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+      dynamodb:
+        image: amazon/dynamodb-local:2.5.2
+        ports:
+          - 8000:8000

@@ -182,6 +182,10 @@ pub(crate) async fn find_matching_backend(
     if let Some(backend) = crate::backends::sqlite::SqliteBackend::new(conn).await {
         return Ok(backend?);
     }
+    #[cfg(feature = "backend-dynamodb")]
+    if let Some(backend) = crate::backends::dynamodb::DynamoDBBackend::new(conn).await {
+        return Ok(backend?);
+    }
 
     let maybe_backend = regex_captures!(r#"^([^:]+):"#, conn);
     Err(CuttlestoreError::NoMatchingBackend(

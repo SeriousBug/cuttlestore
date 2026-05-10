@@ -40,4 +40,9 @@ pub enum CuttlestoreError {
     #[cfg(feature = "backend-redis")]
     #[error("Failed to connecting to or accessing redis: {0}")]
     RedisConnectionError(#[from] bb8::RunError<redis::RedisError>),
+
+    /// An error happened when accessing DynamoDB.
+    #[cfg(feature = "backend-dynamodb")]
+    #[error("Failed to access DynamoDB: {0}")]
+    DynamoDBError(String),
 }

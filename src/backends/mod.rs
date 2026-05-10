@@ -1,3 +1,5 @@
+#[cfg(feature = "backend-dynamodb")]
+pub(crate) mod dynamodb;
 #[cfg(feature = "backend-filesystem")]
 pub(crate) mod filesystem;
 #[cfg(feature = "backend-in-memory")]
