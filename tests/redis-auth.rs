@@ -7,7 +7,7 @@ use tokio::test;
 
 async fn add_user_to_redis() -> (String, String) {
     let redis = redis::Client::open("redis://127.0.0.1").unwrap();
-    let mut conn = redis.get_async_connection().await.unwrap();
+    let mut conn = redis.get_multiplexed_async_connection().await.unwrap();
 
     let user = nanoid::nanoid!();
     let pass = nanoid::nanoid!();
@@ -19,7 +19,9 @@ async fn add_user_to_redis() -> (String, String) {
         Rule::AddPass(pass.clone()),
     ];
 
-    let _: () = conn.acl_setuser_rules(&user, &rules).await.unwrap();
+    conn.acl_setuser_rules::<_, ()>(&user, &rules)
+        .await
+        .unwrap();
 
     (user, pass)
 }

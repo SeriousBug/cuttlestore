@@ -4,13 +4,19 @@ pub enum CuttlestoreError {
     #[error("No store matching {0} is supported.")]
     NoMatchingBackend(String),
 
-    /// An error occurred when encoding or decoding an object.
+    /// An error occurred when encoding an object.
     ///
-    /// Data is encoded and decoded internally to store objects. An encoding
-    /// error could mean an issue with your application's data types, or it
-    /// could point to data corruption.
-    #[error("Failed to encode or decode data: {0}")]
-    EncodingError(#[from] bincode::Error),
+    /// Data is encoded internally to store objects. An encoding error
+    /// likely means an issue with your application's data types.
+    #[error("Failed to encode data: {0}")]
+    EncodingError(#[from] bincode::error::EncodeError),
+
+    /// An error occurred when decoding an object.
+    ///
+    /// A decoding error could mean an issue with your application's data
+    /// types, or it could point to data corruption.
+    #[error("Failed to decode data: {0}")]
+    DecodingError(#[from] bincode::error::DecodeError),
 
     /// An error happened when accessing the file system.
     ///

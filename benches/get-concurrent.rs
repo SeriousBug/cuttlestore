@@ -1,9 +1,11 @@
 use std::time::Duration;
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
+
+use criterion::{criterion_group, criterion_main, Criterion};
 use cuttlestore::Cuttlestore;
 use lipsum::lipsum;
-use rand::prelude::Distribution;
+use rand::distr::{Distribution, Uniform};
 use tokio::{runtime, task::JoinHandle};
 
 /// Load the store with values to initialize it.
@@ -25,8 +27,8 @@ async fn load(store: Cuttlestore<String>, count_keys: u64) {
 
 async fn test(store: Cuttlestore<String>, count_keys: u64, checks: u64) {
     let mut tasks: Vec<JoinHandle<()>> = Vec::new();
-    let uniform = rand::distributions::Uniform::new(0, count_keys * 2); // about 50% chance of missing
-    let mut rng = rand::thread_rng();
+    let uniform = Uniform::new(0, count_keys * 2).unwrap(); // about 50% chance of missing
+    let mut rng = rand::rng();
 
     for _ in 0..checks {
         let store = store.clone();
