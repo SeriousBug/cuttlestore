@@ -1,3 +1,5 @@
+#[cfg(feature = "backend-dynamodb")]
+pub(crate) mod dynamodb;
 #[cfg(feature = "backend-filesystem")]
 pub(crate) mod filesystem;
 #[cfg(feature = "backend-in-memory")]
@@ -6,5 +8,3 @@ pub(crate) mod in_memory;
 pub(crate) mod redis;
 #[cfg(feature = "backend-sqlite-core")]
 pub(crate) mod sqlite;
-#[cfg(feature = "backend-dynamodb")]
-pub(crate) mod dynamodb;

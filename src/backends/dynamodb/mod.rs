@@ -39,8 +39,8 @@ impl DynamoDBBackend {
         table: &str,
         args: HashMap<&str, &str>,
     ) -> Result<Box<Self>, CuttlestoreError> {
-        let mut loader = aws_config::defaults(BehaviorVersion::latest())
-            .region(Region::new(region.to_string()));
+        let mut loader =
+            aws_config::defaults(BehaviorVersion::latest()).region(Region::new(region.to_string()));
 
         if let Some(endpoint) = args.get("endpoint") {
             loader = loader.endpoint_url(*endpoint);
@@ -48,7 +48,8 @@ impl DynamoDBBackend {
 
         match (args.get("access_key"), args.get("secret_key")) {
             (Some(access), Some(secret)) => {
-                loader = loader.credentials_provider(Credentials::from_keys(*access, *secret, None));
+                loader =
+                    loader.credentials_provider(Credentials::from_keys(*access, *secret, None));
             }
             _ => {
                 // For DynamoDB Local, the SDK still requires credentials to be
