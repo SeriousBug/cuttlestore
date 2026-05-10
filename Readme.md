@@ -225,6 +225,11 @@ scanning the database and deleting expired entries on a best-effort basis.
 This scan uses a Tokio task, meaning it will run within your existing Tokio
 thread pool.
 
+For CouchDB, you can enable the feature `backend-couchdb-native-tls` or
+`backend-couchdb-rustls` to pick between native TLS or Rustls for the
+underlying HTTP client. `backend-couchdb` is equal to
+`backend-couchdb-native-tls`.
+
 ## TTL
 
 The TTL (time to live) feature allows you to designate values that should only

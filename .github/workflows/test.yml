@@ -51,7 +51,7 @@ jobs:
         run: cargo test --features 'backend-filesystem' --doc
       - name: Test alternative flags
         # Testing some alternative flag configurations, like rustls and no logging
-        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls,backend-dynamodb,backend-couchdb' --no-default-features --benches --examples --tests
+        run: cargo test --features 'backend-redis,backend-filesystem,backend-in-memory,backend-sqlite-rustls,backend-dynamodb,backend-couchdb-rustls' --no-default-features --benches --examples --tests
       - name: Run tests
         run: cargo llvm-cov --features 'backend-filesystem,backend-dynamodb,backend-couchdb' --benches --examples --tests --lcov --output-path lcov.info
       - name: Upload coverage to Codecov

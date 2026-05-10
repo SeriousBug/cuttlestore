@@ -186,7 +186,7 @@ pub(crate) async fn find_matching_backend(
     if let Some(backend) = crate::backends::dynamodb::DynamoDBBackend::new(conn).await {
         return Ok(backend?);
     }
-    #[cfg(feature = "backend-couchdb")]
+    #[cfg(feature = "backend-couchdb-core")]
     if let Some(backend) = crate::backends::couchdb::CouchdbBackend::new(conn).await {
         return Ok(backend?);
     }

@@ -1,4 +1,4 @@
-#[cfg(feature = "backend-couchdb")]
+#[cfg(feature = "backend-couchdb-core")]
 pub(crate) mod couchdb;
 #[cfg(feature = "backend-dynamodb")]
 pub(crate) mod dynamodb;
