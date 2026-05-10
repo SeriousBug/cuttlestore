@@ -20,7 +20,7 @@ backend-filesystem = []
 backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
-backend-couchdb = ["reqwest", "base64", "serde_json"]
+backend-couchdb = ["reqwest", "serde_json"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization
@@ -93,7 +93,6 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
   "rustls-tls",
 ], optional = true }
-base64 = { version = "0.22", optional = true }
 serde_json = { version = "1.0", optional = true }
 
 

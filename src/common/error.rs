@@ -56,8 +56,8 @@ pub enum CuttlestoreError {
     #[error("CouchDB error: {0}")]
     CouchdbError(String),
 
-    /// Failed to decode a base64-encoded value, used by the CouchDB backend.
+    /// Failed to parse JSON received from a CouchDB server.
     #[cfg(feature = "backend-couchdb")]
-    #[error("Failed to decode base64 data: {0}")]
-    Base64Error(#[from] base64::DecodeError),
+    #[error("Failed to parse JSON: {0}")]
+    JsonError(#[from] serde_json::Error),
 }
