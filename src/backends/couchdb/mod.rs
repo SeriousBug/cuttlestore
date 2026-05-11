@@ -363,7 +363,10 @@ impl CuttleBackend for CouchdbBackend {
         "couchdb"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
         let (doc, value) = match self.get_with_attachment(key.as_ref()).await? {
             Some(pair) => pair,
             None => return Ok(None),
@@ -374,7 +377,7 @@ impl CuttleBackend for CouchdbBackend {
                 return Ok(None);
             }
         }
-        Ok(Some(value))
+        Ok(Some(Cow::Owned(value)))
     }
 
     async fn put<'a>(
@@ -391,9 +394,12 @@ impl CuttleBackend for CouchdbBackend {
         self.delete_doc(key.as_ref()).await
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         let mut url = self.base.clone();
         url.path_segments_mut()
             .expect("couchdb base url cannot be a base")
@@ -435,7 +441,7 @@ impl CuttleBackend for CouchdbBackend {
                         continue;
                     }
                 }
-                yield (row.id, value);
+                yield (row.id, Cow::Owned(value));
             }
         }))
     }

@@ -65,10 +65,13 @@ impl CuttleBackend for RedisBackend {
         "redis"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
         let mut connection = self.pool.get().await?;
         let payload: Option<Vec<u8>> = connection.get(key.as_ref()).await?;
-        Ok(payload)
+        Ok(payload.map(Cow::Owned))
     }
 
     async fn put<'a>(
@@ -96,10 +99,17 @@ impl CuttleBackend for RedisBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
-        Ok(Box::pin(RedisScanStream::new(self.pool.clone()).await))
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
+        use futures::StreamExt;
+        let stream = RedisScanStream::new(self.pool.clone())
+            .await
+            .map(|item| item.map(|(k, v)| (k, Cow::Owned(v))));
+        Ok(Box::pin(stream))
     }
 }
 

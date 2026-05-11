@@ -143,7 +143,10 @@ impl CuttleBackend for SurrealdbBackend {
         "surrealdb"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
         let record: Option<StoredRecord> =
             self.db.select((self.table.as_str(), key.as_ref())).await?;
         let record = match record {
@@ -157,7 +160,7 @@ impl CuttleBackend for SurrealdbBackend {
                 return Ok(None);
             }
         }
-        Ok(Some(record.value))
+        Ok(Some(Cow::Owned(record.value)))
     }
 
     async fn put<'a>(
@@ -184,9 +187,12 @@ impl CuttleBackend for SurrealdbBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         let records: Vec<StoredRecordWithId> = self.db.select(self.table.as_str()).await?;
         let db = self.db.clone();
         let table = self.table.clone();
@@ -203,7 +209,7 @@ impl CuttleBackend for SurrealdbBackend {
                         continue;
                     }
                 }
-                yield (key, record.value);
+                yield (key, Cow::Owned(record.value));
             }
         }))
     }

@@ -61,8 +61,11 @@ impl CuttleBackend for InMemoryBackend {
         "in-memory"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
-        Ok(self.get(key.as_ref()).await)
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
+        Ok(self.get(key.as_ref()).await.map(Cow::Owned))
     }
 
     async fn put<'a>(
@@ -86,9 +89,12 @@ impl CuttleBackend for InMemoryBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         Ok(Box::pin(futures::stream::iter(
             self.map
                 .iter()
@@ -100,7 +106,7 @@ impl CuttleBackend for InMemoryBackend {
                     true
                 })
                 // Copy out the data
-                .map(|v| Ok((v.key().to_string(), v.payload.clone()))),
+                .map(|v| Ok((v.key().to_string(), Cow::Owned(v.payload.clone())))),
         )))
     }
 }

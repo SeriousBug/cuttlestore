@@ -54,7 +54,10 @@ impl CuttleBackend for SqliteBackend {
         "sqlite"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
         let row: Option<(Vec<u8>, Option<i64>)> = sqlx::query_as(
             r#"SELECT value, live_until as "live_until?" FROM cuttlestore WHERE key = ?"#,
         )
@@ -69,7 +72,7 @@ impl CuttleBackend for SqliteBackend {
                         return Ok(None);
                     }
                 }
-                Ok(Some(value))
+                Ok(Some(Cow::Owned(value)))
             }
             None => Ok(None),
         }
@@ -104,9 +107,12 @@ impl CuttleBackend for SqliteBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         let rows = sqlx::query_as::<_, (String, Vec<u8>, Option<i64>)>(
             "SELECT key, value, live_until FROM cuttlestore",
         )
@@ -123,7 +129,7 @@ impl CuttleBackend for SqliteBackend {
                   }
             }
 
-            yield (key, value);
+            yield (key, Cow::Owned(value));
           }
         }))
     }

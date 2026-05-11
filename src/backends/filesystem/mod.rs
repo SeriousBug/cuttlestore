@@ -93,8 +93,11 @@ impl CuttleBackend for FilesystemBackend {
         "filesystem"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
-        Ok(self.get(key.as_ref()).await?)
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
+        Ok(self.get(key.as_ref()).await?.map(Cow::Owned))
     }
 
     async fn put<'a>(
@@ -123,9 +126,12 @@ impl CuttleBackend for FilesystemBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         let read = tokio::fs::read_dir(&self.base_folder).await?;
         let dir_entries = ReadDirStream::new(read);
 
@@ -136,7 +142,7 @@ impl CuttleBackend for FilesystemBackend {
 
             let value = self.get(&key).await?;
             if let Some(value) = value {
-                yield (key, value);
+                yield (key, Cow::Owned(value));
             }
           }
         }))

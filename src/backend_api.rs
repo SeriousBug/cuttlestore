@@ -89,7 +89,10 @@ pub(crate) trait CuttleBackend {
     ///
     /// The backend MUST NOT return the value if the ttl was provided at the
     /// time of the store, and the ttl has expired.
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError>;
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError>;
     /// Put a value into the store.
     async fn put<'a>(
         &self,
@@ -107,9 +110,12 @@ pub(crate) trait CuttleBackend {
     /// If the backend requires an external cleaner (i.e. requires_cleaner
     /// returns true), then this function MUST delete expired pairs when they
     /// are encountered.
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError>;
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    >;
 }
 
 #[cfg(test)]

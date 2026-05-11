@@ -172,7 +172,10 @@ impl CuttleBackend for DynamoDBBackend {
         "dynamodb"
     }
 
-    async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
+    async fn get<'a>(
+        &'a self,
+        key: Cow<'a, str>,
+    ) -> Result<Option<Cow<'a, [u8]>>, CuttlestoreError> {
         let response = self
             .client
             .get_item()
@@ -196,7 +199,7 @@ impl CuttleBackend for DynamoDBBackend {
         }
 
         match item.get(VALUE_ATTR) {
-            Some(AttributeValue::B(blob)) => Ok(Some(blob.clone().into_inner())),
+            Some(AttributeValue::B(blob)) => Ok(Some(Cow::Owned(blob.clone().into_inner()))),
             _ => Ok(None),
         }
     }
@@ -237,9 +240,12 @@ impl CuttleBackend for DynamoDBBackend {
         Ok(())
     }
 
-    async fn scan(
-        &self,
-    ) -> Result<BoxStream<Result<(String, Vec<u8>), CuttlestoreError>>, CuttlestoreError> {
+    async fn scan<'a>(
+        &'a self,
+    ) -> Result<
+        BoxStream<'a, Result<(String, Cow<'a, [u8]>), CuttlestoreError>>,
+        CuttlestoreError,
+    > {
         let client = self.client.clone();
         let table = self.table.clone();
 
@@ -276,7 +282,7 @@ impl CuttleBackend for DynamoDBBackend {
                             Some(AttributeValue::B(blob)) => blob.clone().into_inner(),
                             _ => continue,
                         };
-                        yield (key, value);
+                        yield (key, Cow::Owned(value));
                     }
                 }
                 match response.last_evaluated_key {
