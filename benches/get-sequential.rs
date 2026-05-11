@@ -111,6 +111,34 @@ fn criterion_benchmark(c: &mut Criterion) {
     std::fs::remove_file("./example-store/sqlite-shm").ok();
     std::fs::remove_file("./example-store/sqlite-wal").ok();
 
+    let couchdb = runtime.block_on(async {
+        let store: Cuttlestore<String> =
+            Cuttlestore::new("couchdb://admin:password@127.0.0.1:5984/cuttlestore_bench_get_seq")
+                .await
+                .unwrap();
+        load(store.clone(), count_entries).await;
+        store
+    });
+    group.bench_with_input("couchdb", &couchdb.clone(), |b, couchdb| {
+        b.to_async(&runtime)
+            .iter(|| test(couchdb.clone(), count_entries, count_checks))
+    });
+    drop(couchdb);
+
+    let surrealdb = runtime.block_on(async {
+        let store: Cuttlestore<String> =
+            Cuttlestore::new("surrealdb://root:root@127.0.0.1:8001/cuttlestore/bench_get_seq")
+                .await
+                .unwrap();
+        load(store.clone(), count_entries).await;
+        store
+    });
+    group.bench_with_input("surrealdb", &surrealdb.clone(), |b, surrealdb| {
+        b.to_async(&runtime)
+            .iter(|| test(surrealdb.clone(), count_entries, count_checks))
+    });
+    drop(surrealdb);
+
     group.finish();
 }
 
