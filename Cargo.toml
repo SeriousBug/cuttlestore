@@ -76,7 +76,7 @@ dashmap = { version = "6.1", optional = true }
 # Redis
 redis = { version = "1.2", optional = true, features = [
   "tokio-comp",
-  "tokio-native-tls-comp",
+  "tokio-rustls-comp",
 ] }
 # Connection pool for redis
 bb8 = { version = "0.9", optional = true }
