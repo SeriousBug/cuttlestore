@@ -13,7 +13,6 @@ default = [
   "backend-redis",
   "backend-in-memory",
   "backend-sqlite",
-  "backend-dynamodb",
   "backend-couchdb",
   "logging-tracing",
 ]
