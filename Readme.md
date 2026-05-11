@@ -200,6 +200,12 @@ DynamoDB's native TTL deletes expired items on its own schedule, which can
 take up to 48 hours. Cuttlestore additionally filters expired items in `get`
 and `scan` so they are never returned to your application.
 
+Note that enabling `backend-dynamodb` pulls in the AWS SDK (the DynamoDB
+client plus credential-resolution SDKs such as STS and SSO), which can add
+roughly 13 MB to your stripped release binary. For this reason
+`backend-dynamodb` is not part of the default feature set; enable it
+explicitly when you need it.
+
 #### In-Memory
 
 The in-memory backend is a multithreaded in-memory key-value store backed by
