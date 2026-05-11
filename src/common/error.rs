@@ -60,4 +60,17 @@ pub enum CuttlestoreError {
     #[cfg(feature = "backend-couchdb-core")]
     #[error("Failed to parse JSON: {0}")]
     JsonError(#[from] serde_json::Error),
+
+    /// An error happened when accessing SurrealDB.
+    #[cfg(feature = "backend-surrealdb")]
+    #[error("Failed to access SurrealDB: {0}")]
+    SurrealdbError(String),
 }
+
+#[cfg(feature = "backend-surrealdb")]
+impl From<surrealdb::Error> for CuttlestoreError {
+    fn from(err: surrealdb::Error) -> Self {
+        CuttlestoreError::SurrealdbError(err.to_string())
+    }
+}
+

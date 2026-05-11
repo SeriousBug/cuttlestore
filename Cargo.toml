@@ -13,6 +13,7 @@ default = [
   "backend-redis",
   "backend-in-memory",
   "backend-sqlite",
+  "backend-surrealdb",
   "logging-tracing",
 ]
 backend-redis = ["redis", "bb8", "bb8-redis"]
@@ -21,6 +22,9 @@ backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
 backend-couchdb = ["backend-couchdb-native-tls"]
+# SurrealDB uses pure-Rust dependencies by default (rustls + tokio-tungstenite),
+# so it works as a default-enabled backend.
+backend-surrealdb = ["surrealdb"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization
@@ -101,6 +105,10 @@ reqwest = { version = "0.12", default-features = false, features = [
   "json",
 ], optional = true }
 serde_json = { version = "1.0", optional = true }
+
+# SurrealDB. Pulls in tokio-tungstenite + rustls for the ws/wss protocol,
+# which keeps the build rust-only.
+surrealdb = { version = "2.6", optional = true }
 
 
 [dev-dependencies]

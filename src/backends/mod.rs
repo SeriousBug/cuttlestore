@@ -10,3 +10,5 @@ pub(crate) mod in_memory;
 pub(crate) mod redis;
 #[cfg(feature = "backend-sqlite-core")]
 pub(crate) mod sqlite;
+#[cfg(feature = "backend-surrealdb")]
+pub(crate) mod surrealdb;
