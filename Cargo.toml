@@ -13,7 +13,6 @@ default = [
   "backend-redis",
   "backend-in-memory",
   "backend-sqlite",
-  "backend-surrealdb",
   "logging-tracing",
 ]
 backend-redis = ["redis", "bb8", "bb8-redis"]
@@ -22,8 +21,8 @@ backend-in-memory = ["dashmap"]
 backend-sqlite = ["backend-sqlite-native-tls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
 backend-couchdb = ["backend-couchdb-native-tls"]
-# SurrealDB uses pure-Rust dependencies by default (rustls + tokio-tungstenite),
-# so it works as a default-enabled backend.
+# SurrealDB is pure Rust by default (rustls + tokio-tungstenite), but the
+# `surrealdb` crate pulls in a sizable dependency tree, so it is opt-in.
 backend-surrealdb = ["surrealdb"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]

@@ -57,7 +57,7 @@ Cuttlestore currently has support for:
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
 | DynamoDB   | backend-dynamodb   | dynamodb://region/table | Backed by Amazon DynamoDB. A managed, scalable option that doesn't require running your own server. | No             |
 | CouchDB    | backend-couchdb    | couchdb://host/db | Apache CouchDB backend, useful when you already operate a CouchDB cluster.                      | No                 |
-| SurrealDB  | backend-surrealdb  | surrealdb://[user:pass@]host:port/ns/db | Backed by [SurrealDB](https://surrealdb.com/) over WebSocket. Pure-Rust, works with any SurrealDB storage engine. | Yes                |
+| SurrealDB  | backend-surrealdb  | surrealdb://[user:pass@]host:port/ns/db | Backed by [SurrealDB](https://surrealdb.com/) over WebSocket. Pure-Rust, works with any SurrealDB storage engine. | No                 |
 
 ## Installing
 
@@ -250,7 +250,9 @@ best-effort basis. This scan uses a Tokio task, meaning it will run within
 your existing Tokio thread pool.
 
 The SurrealDB backend is pure Rust (it uses `tokio-tungstenite` with
-`rustls`), so it builds without any C dependencies.
+`rustls`), so it builds without any extra C dependencies. It is opt-in
+because the `surrealdb` crate has a sizable dependency tree that adds
+roughly 10 MB to a stripped release binary.
 
 ## TTL
 
