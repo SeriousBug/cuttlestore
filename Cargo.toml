@@ -13,14 +13,16 @@ default = [
   "backend-redis",
   "backend-in-memory",
   "backend-sqlite",
+  "backend-dynamodb",
+  "backend-couchdb",
   "logging-tracing",
 ]
 backend-redis = ["redis", "bb8", "bb8-redis"]
 backend-filesystem = []
 backend-in-memory = ["dashmap"]
-backend-sqlite = ["backend-sqlite-native-tls"]
+backend-sqlite = ["backend-sqlite-rustls"]
 backend-dynamodb = ["aws-config", "aws-sdk-dynamodb", "aws-credential-types"]
-backend-couchdb = ["backend-couchdb-native-tls"]
+backend-couchdb = ["backend-couchdb-rustls"]
 logging-tracing = ["tracing"]
 logging-log = ["log"]
 # Backend customization

@@ -152,7 +152,7 @@ scan uses a Tokio task, meaning it will run within your existing Tokio thread
 pool.
 
 For sqlite, you can enable the feature `backend-sqlite-native-tls` or
-`backend-sqlite-rustls` to pick between native TLS or Rustls. `backend-sqlite` is equal to `backend-sqlite-native-tls`.
+`backend-sqlite-rustls` to pick between native TLS or Rustls. `backend-sqlite` is equal to `backend-sqlite-rustls`.
 
 ### Filesystem
 
@@ -228,7 +228,7 @@ thread pool.
 For CouchDB, you can enable the feature `backend-couchdb-native-tls` or
 `backend-couchdb-rustls` to pick between native TLS or Rustls for the
 underlying HTTP client. `backend-couchdb` is equal to
-`backend-couchdb-native-tls`.
+`backend-couchdb-rustls`.
 
 ## TTL
 
