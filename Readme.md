@@ -153,7 +153,7 @@ scan uses a Tokio task, meaning it will run within your existing Tokio thread
 pool.
 
 For sqlite, you can enable the feature `backend-sqlite-native-tls` or
-`backend-sqlite-rustls` to pick between native TLS or Rustls. `backend-sqlite` is equal to `backend-sqlite-native-tls`.
+`backend-sqlite-rustls` to pick between native TLS or Rustls. `backend-sqlite` is equal to `backend-sqlite-rustls`.
 
 ### Filesystem
 
@@ -201,6 +201,12 @@ DynamoDB's native TTL deletes expired items on its own schedule, which can
 take up to 48 hours. Cuttlestore additionally filters expired items in `get`
 and `scan` so they are never returned to your application.
 
+Note that enabling `backend-dynamodb` pulls in the AWS SDK (the DynamoDB
+client plus credential-resolution SDKs such as STS and SSO), which can add
+roughly 13 MB to your stripped release binary. For this reason
+`backend-dynamodb` is not part of the default feature set; enable it
+explicitly when you need it.
+
 #### In-Memory
 
 The in-memory backend is a multithreaded in-memory key-value store backed by
@@ -229,7 +235,7 @@ thread pool.
 For CouchDB, you can enable the feature `backend-couchdb-native-tls` or
 `backend-couchdb-rustls` to pick between native TLS or Rustls for the
 underlying HTTP client. `backend-couchdb` is equal to
-`backend-couchdb-native-tls`.
+`backend-couchdb-rustls`.
 
 ### SurrealDB
 
