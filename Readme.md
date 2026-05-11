@@ -56,7 +56,7 @@ Cuttlestore currently has support for:
 | Filesystem | backend-filesystem | filesystem://path | Uses files in a folder as a key-value store. Performance depends on your filesystem.            | No                 |
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
 | DynamoDB   | backend-dynamodb   | dynamodb://region/table | Backed by Amazon DynamoDB. A managed, scalable option that doesn't require running your own server. | No             |
-| CouchDB    | backend-couchdb    | couchdb://host/db | Apache CouchDB backend, useful when you already operate a CouchDB cluster.                      | No                 |
+| CouchDB    | backend-couchdb    | couchdb://host/db | Apache CouchDB backend, useful when you already operate a CouchDB cluster.                      | Yes                |
 | SurrealDB  | backend-surrealdb  | surrealdb://[user:pass@]host:port/ns/db | Backed by [SurrealDB](https://surrealdb.com/) over WebSocket. Pure-Rust, works with any SurrealDB storage engine. | No                 |
 
 ## Installing
