@@ -144,20 +144,16 @@ impl CuttleBackend for SurrealdbBackend {
     }
 
     async fn get<'a>(&self, key: Cow<'a, str>) -> Result<Option<Vec<u8>>, CuttlestoreError> {
-        let record: Option<StoredRecord> = self
-            .db
-            .select((self.table.as_str(), key.as_ref()))
-            .await?;
+        let record: Option<StoredRecord> =
+            self.db.select((self.table.as_str(), key.as_ref())).await?;
         let record = match record {
             Some(r) => r,
             None => return Ok(None),
         };
         if let Some(live_until) = record.live_until {
             if live_until < get_system_time() {
-                let _: Option<StoredRecord> = self
-                    .db
-                    .delete((self.table.as_str(), key.as_ref()))
-                    .await?;
+                let _: Option<StoredRecord> =
+                    self.db.delete((self.table.as_str(), key.as_ref())).await?;
                 return Ok(None);
             }
         }
@@ -184,10 +180,7 @@ impl CuttleBackend for SurrealdbBackend {
     }
 
     async fn delete<'a>(&self, key: Cow<'a, str>) -> Result<(), CuttlestoreError> {
-        let _: Option<StoredRecord> = self
-            .db
-            .delete((self.table.as_str(), key.as_ref()))
-            .await?;
+        let _: Option<StoredRecord> = self.db.delete((self.table.as_str(), key.as_ref())).await?;
         Ok(())
     }
 

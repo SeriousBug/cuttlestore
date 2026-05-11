@@ -73,4 +73,3 @@ impl From<surrealdb::Error> for CuttlestoreError {
         CuttlestoreError::SurrealdbError(err.to_string())
     }
 }
-
