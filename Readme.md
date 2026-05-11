@@ -57,6 +57,7 @@ Cuttlestore currently has support for:
 | In-Memory  | backend-in-memory  | in-memory         | Not persistent, but very high performance. Useful if the store is ephemeral, like a cache.      | Yes                |
 | DynamoDB   | backend-dynamodb   | dynamodb://region/table | Backed by Amazon DynamoDB. A managed, scalable option that doesn't require running your own server. | No             |
 | CouchDB    | backend-couchdb    | couchdb://host/db | Apache CouchDB backend, useful when you already operate a CouchDB cluster.                      | No                 |
+| SurrealDB  | backend-surrealdb  | surrealdb://[user:pass@]host:port/ns/db | Backed by [SurrealDB](https://surrealdb.com/) over WebSocket. Pure-Rust, works with any SurrealDB storage engine. | No                 |
 
 ## Installing
 
@@ -235,6 +236,29 @@ For CouchDB, you can enable the feature `backend-couchdb-native-tls` or
 `backend-couchdb-rustls` to pick between native TLS or Rustls for the
 underlying HTTP client. `backend-couchdb` is equal to
 `backend-couchdb-rustls`.
+
+### SurrealDB
+
+Cuttlestore can use [SurrealDB](https://surrealdb.com/) as a backend. Each
+Cuttlestore key becomes a record in a single table, where the record id is
+the key and the bytes are stored in a `value` field. The connection is made
+over SurrealDB's WebSocket RPC protocol.
+
+The connection string follows the form
+`surrealdb://[user:pass@]host[:port]/namespace/database[?table=...]`. To use
+WSS (TLS), use the `surrealdbs://` scheme instead. For example:
+`surrealdbs://root:root@db.example.com/cuttlestore/cache?table=sessions`. The
+`table` query parameter is optional and defaults to `cuttlestore`.
+
+SurrealDB does not have built-in per-record TTL, so TTL is emulated by
+periodically scanning the table and deleting expired entries on a
+best-effort basis. This scan uses a Tokio task, meaning it will run within
+your existing Tokio thread pool.
+
+The SurrealDB backend is pure Rust (it uses `tokio-tungstenite` with
+`rustls`), so it builds without any extra C dependencies. It is opt-in
+because the `surrealdb` crate has a sizable dependency tree that adds
+roughly 10 MB to a stripped release binary.
 
 ## TTL
 
