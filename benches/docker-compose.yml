@@ -5,3 +5,17 @@ services:
     image: redis:7-alpine
     ports:
       - 6379:6379
+
+  couchdb:
+    image: couchdb:3
+    ports:
+      - 5984:5984
+    environment:
+      COUCHDB_USER: admin
+      COUCHDB_PASSWORD: password
+
+  surrealdb:
+    image: surrealdb/surrealdb:v2.3.7
+    ports:
+      - 8001:8000
+    command: start --user root --pass root --bind 0.0.0.0:8000 memory
