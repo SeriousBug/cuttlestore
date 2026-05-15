@@ -20,6 +20,9 @@ on:
       - tests/*
       - .github/workflows/test.yml
       - Cargo.toml
+  # Allow other workflows (e.g. release.yml) to reuse this test suite so we
+  # never ship a release without running the full backend test matrix.
+  workflow_call:
 jobs:
   test:
     name: test
